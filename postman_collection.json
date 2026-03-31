@@ -1,0 +1,120 @@
+{
+  "info": {
+    "name": "OBE Fuzzy AI Assessment API",
+    "_postman_id": "obe-fuzzy-ai-assessment-api",
+    "description": "Basic collection for testing the OBE fuzzy AI backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "courseId",
+      "value": ""
+    },
+    {
+      "key": "studentId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Login Faculty",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"faculty@example.com\",\n  \"password\": \"Faculty123!\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "Get Courses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/courses"
+      }
+    },
+    {
+      "name": "Create Assessment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"course\": \"{{courseId}}\",\n  \"title\": \"Quiz Demo\",\n  \"type\": \"quiz\",\n  \"cloCodes\": [\n    \"CLO1\"\n  ],\n  \"totalMarks\": 10,\n  \"weightage\": 10\n}"
+        },
+        "url": "{{baseUrl}}/assessments"
+      }
+    },
+    {
+      "name": "Submit Result",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"courseId\": \"{{courseId}}\",\n  \"marks\": {\n    \"quiz\": 8,\n    \"assignment\": 12,\n    \"mid\": 18,\n    \"final\": 35\n  }\n}"
+        },
+        "url": "{{baseUrl}}/results"
+      }
+    },
+    {
+      "name": "Course Analytics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/analytics/course/{{courseId}}"
+      }
+    }
+  ]
+}
