@@ -1,8 +1,15 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+  const mongoUri = (process.env.MONGODB_URI || '').trim();
+
+  if (!mongoUri) {
+    console.error('MONGODB_URI is not set. Create backend/.env from backend/.env.example and add a valid MongoDB connection string.');
+    process.exit(1);
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const conn = await mongoose.connect(mongoUri);
     console.log(`MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
