@@ -116,6 +116,56 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
+      <div className="grid grid-2">
+        <div className="card">
+          <h3>Class-Level CLO Attainment</h3>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>CLO</th>
+                <th>Average Score</th>
+                <th>Attainment %</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(analytics.classCloAttainment || []).map((item) => (
+                <tr key={item.code}>
+                  <td>{item.code}</td>
+                  <td>{item.averageScore}</td>
+                  <td>{item.attainmentPercent}%</td>
+                  <td>{item.attained ? 'Attained' : 'Weak'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card">
+          <h3>CLO Explanation</h3>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>CLO</th>
+                <th>Average Score</th>
+                <th>Class Attainment</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(analytics.cloInsights || []).map((item) => (
+                <tr key={item.code}>
+                  <td>{item.code}</td>
+                  <td>{item.averageScore}</td>
+                  <td>{item.classAttainmentPercent}%</td>
+                  <td className="muted">{item.explanation}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="card">
         <h3>Weak Students</h3>
         <table className="table">

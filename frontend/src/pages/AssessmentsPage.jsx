@@ -7,9 +7,52 @@ const initialForm = {
   title: '',
   type: 'quiz',
   cloCodesText: 'CLO1',
+  cloDistributionText: 'CLO1:10',
+  rubricText: 'CLO1|Concept clarity|5|1:Missing|2:Basic|3:Good|4:Excellent',
   totalMarks: 10,
   weightage: 10
 };
+
+const parseCloDistribution = (text) =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [cloCode, marks] = line.split(':');
+      return {
+        cloCode: cloCode?.trim(),
+        marks: Number(marks) || 0
+      };
+    });
+
+const parseRubrics = (text) =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [cloCode, criterion, marks, levelsText] = line.split('|');
+      const levels = (levelsText || '')
+        .split(';')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((item) => {
+          const [level, description] = item.split(':');
+          return {
+            level: Number(level),
+            description: description?.trim() || ''
+          };
+        })
+        .filter((item) => item.level);
+
+      return {
+        cloCode: cloCode?.trim(),
+        criterion: criterion?.trim(),
+        marks: Number(marks) || 0,
+        levels
+      };
+    });
 
 const AssessmentsPage = () => {
   const [courses, setCourses] = useState([]);
@@ -40,7 +83,9 @@ const AssessmentsPage = () => {
       ...form,
       totalMarks: Number(form.totalMarks),
       weightage: Number(form.weightage),
-      cloCodes: form.cloCodesText.split(',').map((item) => item.trim())
+      cloCodes: form.cloCodesText.split(',').map((item) => item.trim()),
+      cloDistribution: parseCloDistribution(form.cloDistributionText),
+      rubricCriteria: parseRubrics(form.rubricText)
     });
     setForm(initialForm);
     loadAll();
@@ -87,6 +132,20 @@ const AssessmentsPage = () => {
             placeholder="CLO1,CLO2"
           />
 
+          <label>CLO Distribution (one per line, format: CLO1:10)</label>
+          <textarea
+            rows="3"
+            value={form.cloDistributionText}
+            onChange={(e) => setForm({ ...form, cloDistributionText: e.target.value })}
+          />
+
+          <label>Rubric Criteria (one per line, format: CLO1|Criterion|5|1:Missing;2:Basic;3:Good;4:Excellent)</label>
+          <textarea
+            rows="5"
+            value={form.rubricText}
+            onChange={(e) => setForm({ ...form, rubricText: e.target.value })}
+          />
+
           <label>Total Marks</label>
           <input
             value={form.totalMarks}
@@ -110,6 +169,8 @@ const AssessmentsPage = () => {
                 <th>Course</th>
                 <th>Type</th>
                 <th>Weightage</th>
+                <th>CLO Split</th>
+                <th>Rubrics</th>
               </tr>
             </thead>
             <tbody>
@@ -118,6 +179,12 @@ const AssessmentsPage = () => {
                   <td>{item.course?.code}</td>
                   <td>{item.type}</td>
                   <td>{item.weightage}%</td>
+                  <td>
+                    {(item.cloDistribution?.length
+                      ? item.cloDistribution.map((entry) => `${entry.cloCode}:${entry.marks}`).join(', ')
+                      : item.cloCodes?.join(', ') || 'N/A')}
+                  </td>
+                  <td>{item.rubricCriteria?.length || 0}</td>
                 </tr>
               ))}
             </tbody>

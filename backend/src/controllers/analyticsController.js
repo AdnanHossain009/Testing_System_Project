@@ -20,12 +20,19 @@ const adminSummary = asyncHandler(async (req, res) => {
     ])
   ]);
 
+  const highRiskStudents = await Result.find({ riskBand: { $in: ['High', 'Critical'] } })
+    .sort({ riskScore: -1 })
+    .limit(20)
+    .populate('student', 'name email studentId role')
+    .populate('course', 'name code');
+
   return success(res, {
     userCount,
     courseCount,
     departmentCount,
     highRiskCount,
-    roleStats
+    roleStats,
+    highRiskStudents
   }, 'Admin analytics fetched.');
 });
 
@@ -33,7 +40,9 @@ const facultySummary = asyncHandler(async (req, res) => {
   const courses = await Course.find({ faculty: req.user._id });
   const courseIds = courses.map((course) => course._id);
 
-  const results = await Result.find({ course: { $in: courseIds } }).populate('student', 'name email');
+  const results = await Result.find({ course: { $in: courseIds } })
+    .populate('student', 'name email studentId')
+    .populate('course', 'name code');
 
   const weakStudents = results
     .filter((result) => ['High', 'Critical'].includes(result.riskBand))

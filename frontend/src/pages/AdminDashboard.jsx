@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
@@ -30,6 +31,15 @@ const AdminDashboard = () => {
         <StatCard label="Courses" value={data.courseCount} />
         <StatCard label="Departments" value={data.departmentCount} />
         <StatCard label="High Risk Students" value={data.highRiskCount} />
+      </div>
+
+      <div className="inline-actions" style={{ marginBottom: '1rem' }}>
+        <Link className="btn btn-secondary" to="/users">
+          View Users
+        </Link>
+        <Link className="btn btn-secondary" to="/high-risk-students">
+          View High Risk Students
+        </Link>
       </div>
 
       <div className="card">

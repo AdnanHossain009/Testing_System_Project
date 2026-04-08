@@ -1,6 +1,8 @@
 const PDFDocument = require('pdfkit');
 const Result = require('../models/Result');
 const Course = require('../models/Course');
+const Assessment = require('../models/Assessment');
+const CLOPLOMapping = require('../models/CLOPLOMapping');
 const { buildCourseAnalytics } = require('../services/analyticsService');
 const asyncHandler = require('../utils/asyncHandler');
 const { success } = require('../utils/apiResponse');
@@ -62,7 +64,11 @@ const studentPdfReport = asyncHandler(async (req, res) => {
   doc.moveDown();
 
   doc.fontSize(14).text('CLO Attainment');
-  result.cloAttainment.forEach((item) => doc.fontSize(12).text(`${item.code}: ${item.score}`));
+  (result.cloAttainment || []).forEach((item) => {
+    doc.fontSize(12).text(
+      `${item.code}: ${item.score} (${item.attained ? 'Attained' : 'Not Attained'}) - ${item.explanation || ''}`
+    );
+  });
   doc.moveDown();
 
   doc.fontSize(14).text('PLO Attainment');
@@ -86,8 +92,12 @@ const courseSummaryReport = asyncHandler(async (req, res) => {
     throw new Error('Course not found.');
   }
 
+  const [assessments, mapping] = await Promise.all([
+    Assessment.find({ course: req.params.courseId }).lean(),
+    CLOPLOMapping.findOne({ course: req.params.courseId }).lean()
+  ]);
   const analytics = await buildCourseAnalytics(req.params.courseId);
-  return success(res, { course, analytics }, 'Course summary report fetched.');
+  return success(res, { course, assessments, mapping, analytics }, 'Course summary report fetched.');
 });
 
 module.exports = { studentPdfReport, courseSummaryReport };

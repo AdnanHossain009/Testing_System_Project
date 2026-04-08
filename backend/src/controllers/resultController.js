@@ -4,16 +4,13 @@ const Result = require('../models/Result');
 const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { evaluateFuzzy } = require('../services/fuzzyService');
-const {
-  computeRisk,
-  computeOBEAttainment,
-  normalizeMarksForEvaluation
-} = require('../services/analyticsService');
+const { computeRisk, normalizeMarksForEvaluation } = require('../services/analyticsService');
+const { computeOBEAttainment } = require('../services/cloEvaluationService');
 const { logAction } = require('../services/auditService');
 const { createNotification } = require('../services/notificationService');
 
 const upsertResult = asyncHandler(async (req, res) => {
-  const { studentId, courseId, marks } = req.body;
+  const { studentId, courseId, marks, rubricEvaluations = [] } = req.body;
 
   if (!studentId || !courseId || !marks) {
     res.status(400);
@@ -47,7 +44,7 @@ const upsertResult = asyncHandler(async (req, res) => {
     previousHistory: existing?.history || []
   });
 
-  const obe = await computeOBEAttainment({ courseId, marks });
+  const obe = await computeOBEAttainment({ courseId, marks, rubricEvaluations });
 
   const historyEntry = {
     label: new Date().toISOString().slice(0, 10),
@@ -76,6 +73,8 @@ const upsertResult = asyncHandler(async (req, res) => {
       alerts: risk.alerts,
       cloAttainment: obe.cloAttainment,
       ploAttainment: obe.ploAttainment,
+      assessmentEvaluations: obe.assessmentEvaluations,
+      cloDiagnostics: obe.cloDiagnostics,
       history: [...(existing?.history || []), historyEntry].slice(-8),
       evaluatedBy: req.user._id,
       lastEvaluatedAt: new Date()

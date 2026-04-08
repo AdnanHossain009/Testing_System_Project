@@ -4,7 +4,7 @@ import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
 
-const FacultyDashboard = () => {
+const WeakStudentsPage = () => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -12,41 +12,29 @@ const FacultyDashboard = () => {
       const response = await api.get('/analytics/faculty-summary');
       setData(response.data.data);
     };
+
     run();
   }, []);
 
-  if (!data) return <Loading text="Loading faculty dashboard..." />;
+  if (!data) return <Loading text="Loading weak students..." />;
 
   return (
     <div>
       <div className="page-header">
-        <h1>Faculty Dashboard</h1>
+        <h1>Weak Students</h1>
         <p className="muted">
-          Review your courses, identify weak students, and monitor average fuzzy attainment.
+          Risk-focused list of students who need immediate support in your assigned courses.
         </p>
       </div>
 
       <div className="grid grid-3">
         <StatCard label="Assigned Courses" value={data.totalCourses} />
         <StatCard label="Weak Students" value={data.weakStudents.length} />
-        <StatCard
-          label="Tracked Courses"
-          value={data.coursePerformance.length}
-          subtitle="Courses with analytics"
-        />
+        <StatCard label="Tracked Courses" value={data.coursePerformance.length} />
       </div>
 
-      <div className="inline-actions" style={{ marginBottom: '1rem' }}>
-        <Link className="btn btn-secondary" to="/faculty/courses">
-          View Assigned Courses
-        </Link>
-        <Link className="btn btn-secondary" to="/faculty/weak-students">
-          View Weak Students
-        </Link>
-      </div>
-
-      <div className="card">
-        <h3>Course Performance</h3>
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <h3>Course Snapshot</h3>
         <table className="table">
           <thead>
             <tr>
@@ -70,21 +58,39 @@ const FacultyDashboard = () => {
       </div>
 
       <div className="card">
-        <h3>Weak Students</h3>
+        <h3>Weak Student List</h3>
         <table className="table">
           <thead>
             <tr>
               <th>Student</th>
+              <th>Course</th>
               <th>Risk Score</th>
-              <th>Risk Band</th>
+              <th>Band</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {data.weakStudents.map((item) => (
               <tr key={item._id}>
-                <td>{item.student?.name}</td>
+                <td>
+                  <strong>{item.student?.name}</strong>
+                  <div className="muted">{item.student?.email}</div>
+                </td>
+                <td>
+                  {item.course?.code || 'N/A'}
+                  {item.course?.name ? <div className="muted">{item.course.name}</div> : null}
+                </td>
                 <td>{item.riskScore}</td>
                 <td>{item.riskBand}</td>
+                <td>
+                  {item.course?._id ? (
+                    <Link className="btn btn-secondary" to={`/courses/${item.course._id}`}>
+                      View course
+                    </Link>
+                  ) : (
+                    <span className="muted">N/A</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -94,4 +100,4 @@ const FacultyDashboard = () => {
   );
 };
 
-export default FacultyDashboard;
+export default WeakStudentsPage;

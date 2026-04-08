@@ -16,7 +16,17 @@ const listAssessments = asyncHandler(async (req, res) => {
 });
 
 const createAssessment = asyncHandler(async (req, res) => {
-  const { course, title, type, cloCodes = [], totalMarks, weightage, dueDate } = req.body;
+  const {
+    course,
+    title,
+    type,
+    cloCodes = [],
+    cloDistribution = [],
+    rubricCriteria = [],
+    totalMarks,
+    weightage,
+    dueDate
+  } = req.body;
 
   if (!course || !title || !type || !totalMarks || !weightage) {
     res.status(400);
@@ -39,6 +49,8 @@ const createAssessment = asyncHandler(async (req, res) => {
     title,
     type,
     cloCodes,
+    cloDistribution,
+    rubricCriteria,
     totalMarks,
     weightage,
     dueDate,

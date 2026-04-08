@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 const menuByRole = {
   admin: [
     { to: '/dashboard/admin', label: 'Dashboard' },
+    { to: '/users', label: 'Users' },
+    { to: '/high-risk-students', label: 'High Risk Students' },
     { to: '/departments', label: 'Departments' },
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
@@ -11,6 +13,8 @@ const menuByRole = {
   ],
   faculty: [
     { to: '/dashboard/faculty', label: 'Dashboard' },
+    { to: '/faculty/courses', label: 'Assigned Courses' },
+    { to: '/faculty/weak-students', label: 'Weak Students' },
     { to: '/courses', label: 'Courses' },
     { to: '/assessments', label: 'Assessments' },
     { to: '/mappings', label: 'CLO-PLO Mapping' },

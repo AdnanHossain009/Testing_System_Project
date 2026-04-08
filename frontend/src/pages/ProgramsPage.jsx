@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 
@@ -97,6 +98,7 @@ const ProgramsPage = () => {
                 <th>Code</th>
                 <th>Name</th>
                 <th>PLO Count</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -105,6 +107,11 @@ const ProgramsPage = () => {
                   <td>{item.code}</td>
                   <td>{item.name}</td>
                   <td>{item.plos?.length || 0}</td>
+                  <td>
+                    <Link className="btn btn-secondary" to={`/programs/${item._id}`}>
+                      View details
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

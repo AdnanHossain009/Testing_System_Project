@@ -2,6 +2,7 @@ const Result = require('../models/Result');
 const Assessment = require('../models/Assessment');
 const CLOPLOMapping = require('../models/CLOPLOMapping');
 const Program = require('../models/Program');
+const { buildClassCloAttainment } = require('./cloEvaluationService');
 
 const round = (value) => Number((value || 0).toFixed(2));
 
@@ -156,11 +157,11 @@ const buildCourseAnalytics = async (courseId) => {
   const ploCounts = {};
 
   results.forEach((result) => {
-    result.cloAttainment.forEach((item) => {
+    (result.cloAttainment || []).forEach((item) => {
       cloTotals[item.code] = (cloTotals[item.code] || 0) + item.score;
       cloCounts[item.code] = (cloCounts[item.code] || 0) + 1;
     });
-    result.ploAttainment.forEach((item) => {
+    (result.ploAttainment || []).forEach((item) => {
       ploTotals[item.code] = (ploTotals[item.code] || 0) + item.score;
       ploCounts[item.code] = (ploCounts[item.code] || 0) + 1;
     });
@@ -170,6 +171,25 @@ const buildCourseAnalytics = async (courseId) => {
     code,
     score: round(cloTotals[code] / (cloCounts[code] || 1))
   }));
+
+  const classCloAttainment = await buildClassCloAttainment(courseId);
+
+  const cloInsights = cloChart.map((item) => {
+    const classItem = classCloAttainment.find((entry) => entry.code === item.code);
+    const diagnostics = results
+      .flatMap((result) => result.cloDiagnostics || [])
+      .filter((entry) => entry.code === item.code && entry.explanation);
+
+    return {
+      code: item.code,
+      averageScore: item.score,
+      classAttainmentPercent: classItem?.attainmentPercent || 0,
+      attained: (classItem?.attainmentPercent || 0) >= 60,
+      explanation:
+        diagnostics[0]?.explanation ||
+        (classItem?.attained ? 'CLO is being attained by most students.' : 'CLO needs closer review.')
+    };
+  });
 
   const ploChart = Object.keys(ploTotals).map((code) => ({
     code,
@@ -193,7 +213,9 @@ const buildCourseAnalytics = async (courseId) => {
     cloChart,
     ploChart,
     weakStudents,
-    totalStudents: results.length
+    totalStudents: results.length,
+    classCloAttainment,
+    cloInsights
   };
 };
 

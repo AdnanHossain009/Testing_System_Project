@@ -3,7 +3,67 @@ const mongoose = require('mongoose');
 const attainmentSchema = new mongoose.Schema(
   {
     code: { type: String, required: true, trim: true },
-    score: { type: Number, required: true, min: 0, max: 100 }
+    score: { type: Number, required: true, min: 0, max: 100 },
+    percentage: { type: Number, min: 0, max: 100, default: 0 },
+    level: { type: Number, min: 1, max: 4, default: 1 },
+    attained: { type: Boolean, default: false },
+    explanation: { type: String, default: '' }
+  },
+  { _id: false }
+);
+
+const rubricScoreSchema = new mongoose.Schema(
+  {
+    criterion: { type: String, required: true, trim: true },
+    cloCode: { type: String, required: true, trim: true },
+    level: { type: Number, required: true, min: 1, max: 4 },
+    marks: { type: Number, required: true, min: 0 },
+    maxMarks: { type: Number, required: true, min: 0 },
+    comment: { type: String, default: '' },
+    signal: { type: String, default: '' }
+  },
+  { _id: false }
+);
+
+const cloAllocationSchema = new mongoose.Schema(
+  {
+    cloCode: { type: String, required: true, trim: true },
+    allocatedMarks: { type: Number, required: true, min: 0 },
+    earnedMarks: { type: Number, required: true, min: 0 },
+    percentage: { type: Number, required: true, min: 0, max: 100 },
+    signals: [{ type: String }]
+  },
+  { _id: false }
+);
+
+const assessmentEvaluationSchema = new mongoose.Schema(
+  {
+    assessment: { type: mongoose.Schema.Types.ObjectId, ref: 'Assessment', required: true },
+    assessmentTitle: { type: String, required: true, trim: true },
+    type: { type: String, required: true, trim: true },
+    mode: {
+      type: String,
+      enum: ['marks', 'rubric'],
+      default: 'marks'
+    },
+    totalMarks: { type: Number, required: true, min: 0 },
+    obtainedMarks: { type: Number, required: true, min: 0 },
+    percentage: { type: Number, required: true, min: 0, max: 100 },
+    rubricScores: [rubricScoreSchema],
+    cloAllocations: [cloAllocationSchema]
+  },
+  { _id: false }
+);
+
+const cloDiagnosticSchema = new mongoose.Schema(
+  {
+    code: { type: String, required: true, trim: true },
+    score: { type: Number, required: true, min: 0, max: 100 },
+    percentage: { type: Number, required: true, min: 0, max: 100 },
+    level: { type: Number, required: true, min: 1, max: 4 },
+    attained: { type: Boolean, default: false },
+    explanation: { type: String, default: '' },
+    assessmentBreakdown: [cloAllocationSchema]
   },
   { _id: false }
 );
@@ -43,6 +103,8 @@ const resultSchema = new mongoose.Schema(
     cloAttainment: [attainmentSchema],
     ploAttainment: [attainmentSchema],
     history: [historySchema],
+    assessmentEvaluations: [assessmentEvaluationSchema],
+    cloDiagnostics: [cloDiagnosticSchema],
     evaluatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     lastEvaluatedAt: { type: Date }
   },

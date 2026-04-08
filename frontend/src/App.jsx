@@ -14,6 +14,12 @@ import MappingPage from './pages/MappingPage';
 import ResultsPage from './pages/ResultsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import UsersPage from './pages/UsersPage';
+import HighRiskStudentsPage from './pages/HighRiskStudentsPage';
+import AssignedCoursesPage from './pages/AssignedCoursesPage';
+import WeakStudentsPage from './pages/WeakStudentsPage';
+import CourseDetailsPage from './pages/CourseDetailsPage';
+import ProgramDetailsPage from './pages/ProgramDetailsPage';
 import { useAuth } from './context/AuthContext';
 
 const HomeRedirect = () => {
@@ -45,10 +51,18 @@ const App = () => {
         </Route>
       </Route>
 
+      <Route element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'head']} />}>
+        <Route element={<Layout />}>
+          <Route path="/courses/:courseId" element={<CourseDetailsPage />} />
+        </Route>
+      </Route>
+
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route element={<Layout />}>
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
           <Route path="/departments" element={<DepartmentsPage />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/high-risk-students" element={<HighRiskStudentsPage />} />
         </Route>
       </Route>
 
@@ -57,6 +71,8 @@ const App = () => {
           <Route path="/dashboard/faculty" element={<FacultyDashboard />} />
           <Route path="/assessments" element={<AssessmentsPage />} />
           <Route path="/mappings" element={<MappingPage />} />
+          <Route path="/faculty/courses" element={<AssignedCoursesPage />} />
+          <Route path="/faculty/weak-students" element={<WeakStudentsPage />} />
         </Route>
       </Route>
 
@@ -75,6 +91,7 @@ const App = () => {
       <Route element={<ProtectedRoute allowedRoles={['admin', 'head']} />}>
         <Route element={<Layout />}>
           <Route path="/programs" element={<ProgramsPage />} />
+          <Route path="/programs/:programId" element={<ProgramDetailsPage />} />
         </Route>
       </Route>
 

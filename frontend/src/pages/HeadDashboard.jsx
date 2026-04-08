@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
@@ -40,6 +41,7 @@ const HeadDashboard = () => {
               <th>Program</th>
               <th>Average Fuzzy</th>
               <th>Result Count</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -50,6 +52,11 @@ const HeadDashboard = () => {
                 </td>
                 <td>{item.averageFuzzy}</td>
                 <td>{item.count}</td>
+                <td>
+                  <Link className="btn btn-secondary" to={`/programs/${item.programId}`}>
+                    View details
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +27,7 @@ const parseCLOs = (text) =>
 
 const CoursesPage = () => {
   const { user } = useAuth();
+  const canViewDetails = ['admin', 'faculty', 'head'].includes(user?.role);
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [programs, setPrograms] = useState([]);
@@ -150,6 +152,7 @@ const CoursesPage = () => {
               <th>Course</th>
               <th>Faculty</th>
               <th>CLO Count</th>
+              {canViewDetails ? <th>Action</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -160,6 +163,13 @@ const CoursesPage = () => {
                 </td>
                 <td>{item.faculty?.name || 'Not Assigned'}</td>
                 <td>{item.clos?.length || 0}</td>
+                {canViewDetails ? (
+                  <td>
+                    <Link className="btn btn-secondary" to={`/courses/${item._id}`}>
+                      View details
+                    </Link>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
