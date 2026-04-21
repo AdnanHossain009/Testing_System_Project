@@ -4,33 +4,136 @@ import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
 
+const summarizeClos = (course) => (course?.clos?.length ? course.clos.map((item) => item.code).join(', ') : 'N/A');
+
+const summarizePlos = (mappings = []) => {
+  const ploCodes = Array.from(new Set((mappings || []).map((item) => item.ploCode)));
+  return ploCodes.length ? ploCodes.join(', ') : 'N/A';
+};
+
+const formatDate = (value) => (value ? new Date(value).toLocaleString() : 'N/A');
+
 const HeadDashboard = () => {
   const [data, setData] = useState(null);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+  const [busyRequestId, setBusyRequestId] = useState('');
+
+  const loadDashboard = async () => {
+    const [summaryResult, inboxResult] = await Promise.allSettled([
+      api.get('/analytics/head-summary'),
+      api.get('/course-requests/inbox')
+    ]);
+
+    if (summaryResult.status === 'fulfilled') {
+      setData(summaryResult.value.data.data);
+    } else {
+      setMessage(summaryResult.reason?.response?.data?.message || 'Failed to load head summary.');
+    }
+
+    if (inboxResult.status === 'fulfilled') {
+      setPendingRequests(inboxResult.value.data.data.requests || []);
+    } else if (!message) {
+      setMessage(inboxResult.reason?.response?.data?.message || 'Failed to load course requests.');
+    }
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const run = async () => {
-      const response = await api.get('/analytics/head-summary');
-      setData(response.data.data);
-    };
-    run();
+    loadDashboard();
   }, []);
 
-  if (!data) return <Loading text="Loading department head dashboard..." />;
+  const handleRequestDecision = async (requestId, action) => {
+    setBusyRequestId(requestId);
+    setMessage('');
+
+    try {
+      await api.patch(`/course-requests/${requestId}/${action}`);
+      setMessage(action === 'approve' ? 'Course request approved.' : 'Course request rejected.');
+      await loadDashboard();
+    } catch (error) {
+      setMessage(error?.response?.data?.message || 'Unable to update request.');
+    } finally {
+      setBusyRequestId('');
+    }
+  };
+
+  if (loading) return <Loading text="Loading department head dashboard..." />;
+  if (!data) return <div className="error-box">{message || 'Unable to load head dashboard.'}</div>;
 
   return (
     <div>
       <div className="page-header">
         <h1>Department Head Dashboard</h1>
         <p className="muted">
-          Program wise fuzzy attainment summary, department trend and course scale monitoring.
+          Review pending faculty course requests, program wise attainment, and department trends.
         </p>
       </div>
+
+      {message ? <div className={message.toLowerCase().includes('failed') ? 'error-box' : 'success-box'}>{message}</div> : null}
 
       <div className="grid grid-4">
         <StatCard label="Department" value={data.department?.code || 'N/A'} />
         <StatCard label="Courses" value={data.totalCourses} />
         <StatCard label="Stored Results" value={data.totalResults} />
         <StatCard label="Avg Department Fuzzy" value={data.averageDepartmentFuzzy} />
+      </div>
+
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <h3>Pending Faculty Course Requests</h3>
+        {pendingRequests.length === 0 ? (
+          <p className="muted">No pending faculty requests.</p>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Faculty</th>
+                <th>Course</th>
+                <th>CLOs</th>
+                <th>PLOs</th>
+                <th>Requested At</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingRequests.map((item) => (
+                <tr key={item._id}>
+                  <td>
+                    <strong>{item.requester?.name}</strong>
+                    <div className="muted">{item.requester?.facultyId || item.requester?.email}</div>
+                  </td>
+                  <td>
+                    <strong>{item.proposedCourse?.code}</strong>
+                    <div className="muted">{item.proposedCourse?.name}</div>
+                  </td>
+                  <td>{summarizeClos(item.proposedCourse)}</td>
+                  <td>{summarizePlos(item.proposedMappings)}</td>
+                  <td>{formatDate(item.createdAt)}</td>
+                  <td>
+                    <div className="inline-actions">
+                      <button
+                        className="btn"
+                        onClick={() => handleRequestDecision(item._id, 'approve')}
+                        disabled={busyRequestId === item._id}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => handleRequestDecision(item._id, 'reject')}
+                        disabled={busyRequestId === item._id}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="card">

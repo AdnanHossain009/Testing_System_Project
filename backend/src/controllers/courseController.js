@@ -1,18 +1,32 @@
 const Course = require('../models/Course');
+const CLOPLOMapping = require('../models/CLOPLOMapping');
 const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { logAction } = require('../services/auditService');
 
 const listCourses = asyncHandler(async (req, res) => {
-  const filter = {};
-  if (req.query.programId) filter.program = req.query.programId;
-  if (req.query.departmentId) filter.department = req.query.departmentId;
+  const filter = req.user.role === 'admin' ? {} : { active: true };
 
-  if (req.user.role === 'faculty') {
-    filter.faculty = req.user._id;
+  if (req.user.role !== 'admin') {
+    if (req.user.department) {
+      filter.department = req.user.department;
+    }
+
+    if (req.user.program) {
+      filter.program = req.user.program;
+    }
+
+    if (req.user.role === 'student') {
+      filter.faculty = { $ne: null };
+    }
   }
-  if (req.user.role === 'student' && req.user.program) {
-    filter.program = req.user.program;
+
+  if (req.user.role === 'admin') {
+    if (req.query.programId) filter.program = req.query.programId;
+    if (req.query.departmentId) filter.department = req.query.departmentId;
+  } else {
+    if (!filter.program && req.query.programId) filter.program = req.query.programId;
+    if (!filter.department && req.query.departmentId) filter.department = req.query.departmentId;
   }
 
   const courses = await Course.find(filter)
@@ -20,7 +34,30 @@ const listCourses = asyncHandler(async (req, res) => {
     .populate('program', 'name code')
     .populate('faculty', 'name email facultyId');
 
-  return success(res, { courses }, 'Courses fetched.');
+  const mappings = await CLOPLOMapping.find({ course: { $in: courses.map((course) => course._id) } }).lean();
+  const mappingByCourse = new Map(mappings.map((item) => [String(item.course), item]));
+
+  const searchTerm = (req.query.search || req.query.q || '').trim().toLowerCase();
+  const filteredCourses = searchTerm
+    ? courses.filter((course) => {
+        const facultyText = [course.faculty?.name, course.faculty?.email, course.faculty?.facultyId]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return (
+          course.name.toLowerCase().includes(searchTerm) ||
+          course.code.toLowerCase().includes(searchTerm) ||
+          facultyText.includes(searchTerm)
+        );
+      })
+    : courses;
+
+  const enrichedCourses = filteredCourses.map((course) => ({
+    ...course.toObject(),
+    cloPloMapping: mappingByCourse.get(String(course._id)) || null
+  }));
+
+  return success(res, { courses: enrichedCourses }, 'Courses fetched.');
 });
 
 const createCourse = asyncHandler(async (req, res) => {

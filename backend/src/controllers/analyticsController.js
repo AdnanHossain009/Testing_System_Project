@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Department = require('../models/Department');
 const Course = require('../models/Course');
+const Enrollment = require('../models/Enrollment');
 const Result = require('../models/Result');
 const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
@@ -8,6 +9,7 @@ const {
   buildCourseAnalytics,
   buildProgramAnalytics
 } = require('../services/analyticsService');
+const { buildStudentAnalytics } = require('../services/studentAnalyticsService');
 
 const adminSummary = asyncHandler(async (req, res) => {
   const [userCount, courseCount, departmentCount, highRiskCount, roleStats] = await Promise.all([
@@ -71,7 +73,31 @@ const facultySummary = asyncHandler(async (req, res) => {
 });
 
 const studentSummary = asyncHandler(async (req, res) => {
-  const results = await Result.find({ student: req.user._id }).populate('course', 'name code');
+  const [enrollments, results] = await Promise.all([
+    Enrollment.find({ student: req.user._id })
+      .populate({
+        path: 'course',
+        select: 'name code credits semester faculty department program active',
+        populate: [
+          { path: 'faculty', select: 'name email facultyId' },
+          { path: 'department', select: 'name code' },
+          { path: 'program', select: 'name code' }
+        ]
+      })
+      .populate('approvedBy', 'name email role')
+      .sort({ enrolledAt: -1 }),
+    Result.find({ student: req.user._id })
+      .populate({
+        path: 'course',
+        select: 'name code credits semester faculty department program',
+        populate: [
+          { path: 'faculty', select: 'name email facultyId' },
+          { path: 'department', select: 'name code' },
+          { path: 'program', select: 'name code' }
+        ]
+      })
+      .sort({ updatedAt: -1 })
+  ]);
 
   const averageFuzzy =
     results.length > 0
@@ -82,11 +108,16 @@ const studentSummary = asyncHandler(async (req, res) => {
     item.alerts.map((alert) => ({ course: item.course.code, message: alert }))
   );
 
+  const analytics = buildStudentAnalytics({ enrollments, results });
+
   return success(res, {
     totalCourses: results.length,
+    enrolledCourses: enrollments.length,
     averageFuzzy,
     results,
-    alerts
+    enrollments,
+    alerts,
+    analytics
   }, 'Student analytics fetched.');
 });
 

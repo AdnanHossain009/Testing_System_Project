@@ -1,4 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import PublicLayout from './components/PublicLayout';
+import HomePage from './pages/HomePage';
+import FuzzyPage from './pages/FuzzyPage';
+import ObePage from './pages/ObePage';
+import CloPloPage from './pages/CloPloPage';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
@@ -20,28 +25,27 @@ import AssignedCoursesPage from './pages/AssignedCoursesPage';
 import WeakStudentsPage from './pages/WeakStudentsPage';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import ProgramDetailsPage from './pages/ProgramDetailsPage';
-import { useAuth } from './context/AuthContext';
-
-const HomeRedirect = () => {
-  const { isAuthenticated, user } = useAuth();
-
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-  const map = {
-    admin: '/dashboard/admin',
-    faculty: '/dashboard/faculty',
-    student: '/dashboard/student',
-    head: '/dashboard/head'
-  };
-
-  return <Navigate to={map[user?.role] || '/login'} replace />;
-};
+import CourseRequestsPage from './pages/CourseRequestsPage';
+import EnrollmentHistoryPage from './pages/EnrollmentHistoryPage';
 
 const App = () => {
   return (
     <Routes>
-      <Route path="/" element={<HomeRedirect />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route element={<PublicLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="fuzzy" element={<FuzzyPage />} />
+        <Route path="obe" element={<ObePage />} />
+        <Route path="clo-plo" element={<CloPloPage />} />
+      </Route>
+
+      <Route path="/login" element={<LoginPage initialMode="login" />} />
+      <Route path="/signup" element={<LoginPage initialMode="signup" />} />
+
+      <Route element={<ProtectedRoute allowedRoles={['faculty']} />}>
+        <Route element={<Layout />}>
+          <Route path="/course-requests" element={<CourseRequestsPage />} />
+        </Route>
+      </Route>
 
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
@@ -79,6 +83,7 @@ const App = () => {
       <Route element={<ProtectedRoute allowedRoles={['student']} />}>
         <Route element={<Layout />}>
           <Route path="/dashboard/student" element={<StudentDashboard />} />
+          <Route path="/enrollments/history" element={<EnrollmentHistoryPage />} />
         </Route>
       </Route>
 

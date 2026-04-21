@@ -11,6 +11,13 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(false);
 
+  const storeSession = (payload) => {
+    setToken(payload.token);
+    setUser(payload.user);
+    localStorage.setItem('obe_token', payload.token);
+    localStorage.setItem('obe_user', JSON.stringify(payload.user));
+  };
+
   useEffect(() => {
     const verify = async () => {
       if (!token) return;
@@ -31,15 +38,29 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       const payload = response.data.data;
-      setToken(payload.token);
-      setUser(payload.user);
-      localStorage.setItem('obe_token', payload.token);
-      localStorage.setItem('obe_user', JSON.stringify(payload.user));
+      storeSession(payload);
       return { ok: true, role: payload.user.role };
     } catch (error) {
       return {
         ok: false,
         message: error?.response?.data?.message || 'Login failed.'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signup = async (data) => {
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/signup', data);
+      const payload = response.data.data;
+      storeSession(payload);
+      return { ok: true, role: payload.user.role };
+    } catch (error) {
+      return {
+        ok: false,
+        message: error?.response?.data?.message || 'Signup failed.'
       };
     } finally {
       setLoading(false);
@@ -60,6 +81,7 @@ export const AuthProvider = ({ children }) => {
       loading,
       isAuthenticated: Boolean(token),
       login,
+      signup,
       logout
     }),
     [token, user, loading]
