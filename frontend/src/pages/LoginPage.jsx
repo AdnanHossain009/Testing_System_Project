@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './LoginPage.css';
 
@@ -119,217 +119,250 @@ const LoginPage = ({ initialMode = 'login' }) => {
 
   return (
     <div className="login-page-pro">
-      <div className="login-page-pro__overlay"></div>
+      <header className="public-navbar login-page-pro__navbar">
+        <Link to="/" className="public-brand" aria-label="OBE Assess home">
+          <span className="public-brand__mark">OA</span>
+          <span className="public-brand__text">
+            <strong>OBE Assess</strong>
+            <small>Outcome-based academic intelligence</small>
+          </span>
+        </Link>
 
-      <div className="login-page-pro__container">
-        <div className="login-page-pro__left">
-          <div className="login-page-pro__badge">OBE Intelligence Platform</div>
+        <nav className="public-nav" aria-label="Authentication navigation">
+          <Link className="public-nav__anchor" to="/">
+            Home
+          </Link>
+          <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/fuzzy">
+            Fuzzy
+          </NavLink>
+          <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/obe">
+            OBE
+          </NavLink>
+          <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/clo-plo">
+            CLO PLO
+          </NavLink>
+          <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/login">
+            Login
+          </NavLink>
+          <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/signup">
+            Sign Up
+          </NavLink>
+        </nav>
+      </header>
 
-          <h1 className="login-page-pro__title">
-            Intelligent Student
-            <br />
-            Assessment System
-          </h1>
+      <div className="login-page-pro__content">
+        <div className="login-page-pro__overlay"></div>
 
-          <p className="login-page-pro__subtitle">
-            A smart Outcome-Based Education platform powered by fuzzy logic,
-            analytics, role-based dashboards, and intelligent performance
-            evaluation.
-          </p>
+        <div className="login-page-pro__container">
+          <div className="login-page-pro__left">
+            <div className="login-page-pro__badge">OBE Intelligence Platform</div>
 
-          <div className="login-page-pro__features">
-            <div className="login-page-pro__feature">
-              <div className="login-page-pro__icon">📊</div>
-              <div>
-                <h3>Real-Time Analytics</h3>
-                <p>Track CLO and PLO attainment with clear visual dashboards.</p>
+            <h1 className="login-page-pro__title">
+              Intelligent Student
+              <br />
+              Assessment System
+            </h1>
+
+            <p className="login-page-pro__subtitle">
+              A smart Outcome-Based Education platform powered by fuzzy logic,
+              analytics, role-based dashboards, and intelligent performance
+              evaluation.
+            </p>
+
+            <div className="login-page-pro__features">
+              <div className="login-page-pro__feature">
+                <div className="login-page-pro__icon">📊</div>
+                <div>
+                  <h3>Real-Time Analytics</h3>
+                  <p>Track CLO and PLO attainment with clear visual dashboards.</p>
+                </div>
               </div>
-            </div>
 
-            <div className="login-page-pro__feature">
-              <div className="login-page-pro__icon">🧠</div>
-              <div>
-                <h3>Fuzzy Logic Evaluation</h3>
-                <p>Handle uncertainty in assessment with intelligent scoring.</p>
+              <div className="login-page-pro__feature">
+                <div className="login-page-pro__icon">🧠</div>
+                <div>
+                  <h3>Fuzzy Logic Evaluation</h3>
+                  <p>Handle uncertainty in assessment with intelligent scoring.</p>
+                </div>
               </div>
-            </div>
 
-            <div className="login-page-pro__feature">
-              <div className="login-page-pro__icon">⚠️</div>
-              <div>
-                <h3>Risk Detection</h3>
-                <p>Identify weak students early using smart analytics.</p>
+              <div className="login-page-pro__feature">
+                <div className="login-page-pro__icon">⚠️</div>
+                <div>
+                  <h3>Risk Detection</h3>
+                  <p>Identify weak students early using smart analytics.</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="login-page-pro__right">
-          <div className="login-page-pro__card">
-            <div className="login-page-pro__header">
-              <h2>{isSignup ? 'Create Your Account' : 'Welcome Back'}</h2>
-              <p>
-                {isSignup
-                  ? `Register as ${selectedRoleLabel}. Your details will be stored in the database right away.`
-                  : `Sign in as ${selectedRoleLabel} to access the matching dashboard.`}
-              </p>
-            </div>
-
-            <div className="login-page-pro__modeSwitch" role="tablist" aria-label="Authentication mode">
-              <button
-                type="button"
-                className={`login-page-pro__modeButton ${isSignup ? '' : 'login-page-pro__modeButton--active'}`}
-                onClick={() => goToMode('login')}
-                aria-pressed={!isSignup}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                className={`login-page-pro__modeButton ${isSignup ? 'login-page-pro__modeButton--active' : ''}`}
-                onClick={() => goToMode('signup')}
-                aria-pressed={isSignup}
-              >
-                Sign Up
-              </button>
-            </div>
-
-            {error ? <div className="login-page-pro__error">{error}</div> : null}
-
-            <form onSubmit={submitHandler} className="login-page-pro__form">
-              <div className="login-page-pro__group">
-                <label>{isSignup ? 'Register as' : 'Access as'}</label>
-                <select value={form.role} onChange={handleRoleChange}>
-                  {roleOptions.map((role) => (
-                    <option key={role} value={role}>
-                      {roleLabels[role]}
-                    </option>
-                  ))}
-                </select>
+          <div className="login-page-pro__right">
+            <div className="login-page-pro__card">
+              <div className="login-page-pro__header">
+                <h2>{isSignup ? 'Create Your Account' : 'Welcome Back'}</h2>
+                <p>
+                  {isSignup
+                    ? `Register as ${selectedRoleLabel}. Your details will be stored in the database right away.`
+                    : `Sign in as ${selectedRoleLabel} to access the matching dashboard.`}
+                </p>
               </div>
+
+              <div className="login-page-pro__modeSwitch" role="tablist" aria-label="Authentication mode">
+                <button
+                  type="button"
+                  className={`login-page-pro__modeButton ${isSignup ? '' : 'login-page-pro__modeButton--active'}`}
+                  onClick={() => goToMode('login')}
+                  aria-pressed={!isSignup}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  className={`login-page-pro__modeButton ${isSignup ? 'login-page-pro__modeButton--active' : ''}`}
+                  onClick={() => goToMode('signup')}
+                  aria-pressed={isSignup}
+                >
+                  Sign Up
+                </button>
+              </div>
+
+              {error ? <div className="login-page-pro__error">{error}</div> : null}
+
+              <form onSubmit={submitHandler} className="login-page-pro__form">
+                <div className="login-page-pro__group">
+                  <label>{isSignup ? 'Register as' : 'Access as'}</label>
+                  <select value={form.role} onChange={handleRoleChange}>
+                    {roleOptions.map((role) => (
+                      <option key={role} value={role}>
+                        {roleLabels[role]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {isSignup ? (
+                  <div className="login-page-pro__group">
+                    <label>Full Name</label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(event) => setForm({ ...form, name: event.target.value })}
+                      placeholder="Enter your full name"
+                      autoComplete="name"
+                      required
+                    />
+                  </div>
+                ) : null}
+
+                <div className="login-page-pro__group">
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => setForm({ ...form, email: event.target.value })}
+                    placeholder="Enter your email"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+
+                {isSignup && form.role === 'student' ? (
+                  <div className="login-page-pro__group">
+                    <label>Student ID</label>
+                    <input
+                      type="text"
+                      value={form.studentId}
+                      onChange={(event) =>
+                        setForm({ ...form, studentId: event.target.value })
+                      }
+                      placeholder="Enter your student ID"
+                      required
+                    />
+                  </div>
+                ) : null}
+
+                {isSignup && form.role === 'faculty' ? (
+                  <div className="login-page-pro__group">
+                    <label>Faculty ID</label>
+                    <input
+                      type="text"
+                      value={form.facultyId}
+                      onChange={(event) =>
+                        setForm({ ...form, facultyId: event.target.value })
+                      }
+                      placeholder="Enter your faculty ID"
+                      required
+                    />
+                  </div>
+                ) : null}
+
+                <div className="login-page-pro__group">
+                  <label>Password</label>
+                  <div className="login-page-pro__passwordWrap">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={(event) =>
+                        setForm({ ...form, password: event.target.value })
+                      }
+                      placeholder="Enter your password"
+                      autoComplete={isSignup ? 'new-password' : 'current-password'}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="login-page-pro__toggle"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+
+                {isSignup ? (
+                  <div className="login-page-pro__group">
+                    <label>Confirm Password</label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={form.confirmPassword}
+                      onChange={(event) =>
+                        setForm({ ...form, confirmPassword: event.target.value })
+                      }
+                      placeholder="Confirm your password"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+                ) : null}
+
+                <button className="login-page-pro__button" type="submit" disabled={loading}>
+                  {loading
+                    ? isSignup
+                      ? 'Creating account...'
+                      : 'Signing in...'
+                    : isSignup
+                      ? 'Create Account'
+                      : 'Sign In'}
+                </button>
+              </form>
 
               {isSignup ? (
-                <div className="login-page-pro__group">
-                  <label>Full Name</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(event) => setForm({ ...form, name: event.target.value })}
-                    placeholder="Enter your full name"
-                    autoComplete="name"
-                    required
-                  />
+                <div className="login-page-pro__demo login-page-pro__demo--signup">
+                  <strong>Signup rules</strong>
+                  <p>Faculty, student, and head accounts are allowed here.</p>
+                  <p>Admin registration stays locked to the setup flow.</p>
+                  <p>Your account will be saved in MongoDB and ready for sign in.</p>
                 </div>
-              ) : null}
-
-              <div className="login-page-pro__group">
-                <label>Email Address</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(event) => setForm({ ...form, email: event.target.value })}
-                  placeholder="Enter your email"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-
-              {isSignup && form.role === 'student' ? (
-                <div className="login-page-pro__group">
-                  <label>Student ID</label>
-                  <input
-                    type="text"
-                    value={form.studentId}
-                    onChange={(event) =>
-                      setForm({ ...form, studentId: event.target.value })
-                    }
-                    placeholder="Enter your student ID"
-                    required
-                  />
+              ) : (
+                <div className="login-page-pro__demo">
+                  <strong>Seeded Demo Users</strong>
+                  <p>admin@example.com / Admin123!</p>
+                  <p>faculty@example.com / Faculty123!</p>
+                  <p>student1@example.com / Student123!</p>
+                  <p>head@example.com / Head123!</p>
                 </div>
-              ) : null}
-
-              {isSignup && form.role === 'faculty' ? (
-                <div className="login-page-pro__group">
-                  <label>Faculty ID</label>
-                  <input
-                    type="text"
-                    value={form.facultyId}
-                    onChange={(event) =>
-                      setForm({ ...form, facultyId: event.target.value })
-                    }
-                    placeholder="Enter your faculty ID"
-                    required
-                  />
-                </div>
-              ) : null}
-
-              <div className="login-page-pro__group">
-                <label>Password</label>
-                <div className="login-page-pro__passwordWrap">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={(event) =>
-                      setForm({ ...form, password: event.target.value })
-                    }
-                    placeholder="Enter your password"
-                    autoComplete={isSignup ? 'new-password' : 'current-password'}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="login-page-pro__toggle"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                  >
-                    {showPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-              </div>
-
-              {isSignup ? (
-                <div className="login-page-pro__group">
-                  <label>Confirm Password</label>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.confirmPassword}
-                    onChange={(event) =>
-                      setForm({ ...form, confirmPassword: event.target.value })
-                    }
-                    placeholder="Confirm your password"
-                    autoComplete="new-password"
-                    required
-                  />
-                </div>
-              ) : null}
-
-              <button className="login-page-pro__button" type="submit" disabled={loading}>
-                {loading
-                  ? isSignup
-                    ? 'Creating account...'
-                    : 'Signing in...'
-                  : isSignup
-                    ? 'Create Account'
-                    : 'Sign In'}
-              </button>
-            </form>
-
-            {isSignup ? (
-              <div className="login-page-pro__demo login-page-pro__demo--signup">
-                <strong>Signup rules</strong>
-                <p>Faculty, student, and head accounts are allowed here.</p>
-                <p>Admin registration stays locked to the setup flow.</p>
-                <p>Your account will be saved in MongoDB and ready for sign in.</p>
-              </div>
-            ) : (
-              <div className="login-page-pro__demo">
-                <strong>Seeded Demo Users</strong>
-                <p>admin@example.com / Admin123!</p>
-                <p>faculty@example.com / Faculty123!</p>
-                <p>student1@example.com / Student123!</p>
-                <p>head@example.com / Head123!</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
