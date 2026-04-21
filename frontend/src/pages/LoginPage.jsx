@@ -141,13 +141,16 @@ const LoginPage = ({ initialMode = 'login' }) => {
           <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/clo-plo">
             CLO PLO
           </NavLink>
-          <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/login">
-            Login
-          </NavLink>
-          <NavLink className={({ isActive }) => `public-nav__link ${isActive ? 'active' : ''}`} to="/signup">
-            Sign Up
-          </NavLink>
         </nav>
+
+        <div className="public-actions">
+          <Link className="public-button public-button--ghost" to="/login">
+            Login
+          </Link>
+          <Link className="public-button" to="/signup">
+            Sign Up
+          </Link>
+        </div>
       </header>
 
       <div className="login-page-pro__content">
