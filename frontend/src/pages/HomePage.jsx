@@ -2,20 +2,20 @@ import { Link } from 'react-router-dom';
 
 const highlights = [
   {
-    title: 'Role-based access',
-    text: 'Students, faculty, heads, and admins see only the tools they need.'
+    title: 'Role-Based Access Control',
+    text: 'Students manage enrollments, faculty review assessments, heads approve courses, and admins oversee system operations. Every user sees only their relevant tools and data.'
   },
   {
-    title: 'Request and approval flow',
-    text: 'Faculty approve student enrollments, and heads approve faculty course requests.'
+    title: 'Streamlined Enrollment Workflow',
+    text: 'Students request enrollment, faculty review qualifications, department heads verify CLO-PLO mappings, and active courses appear in real-time for outcome tracking.'
   },
   {
-    title: 'CLO-PLO mapping',
-    text: 'Courses carry CLOs and weighted PLO mappings for transparent review.'
+    title: 'CLO-PLO Mapping & Verification',
+    text: 'Courses define Course Learning Outcomes (CLOs) with weighted mappings to Program Learning Outcomes (PLOs). Department heads approve mappings before course activation.'
   },
   {
-    title: 'Fuzzy evaluation',
-    text: 'Assessment scores are normalized, fuzzified, and converted into readable attainment.'
+    title: 'Intelligent Fuzzy Scoring',
+    text: 'Raw assessment marks are normalized, fuzzified into membership functions, and converted into Low/Medium/High attainment classifications for clearer outcome understanding.'
   }
 ];
 
@@ -23,29 +23,29 @@ const workflow = [
   {
     step: '01',
     title: 'Create your account',
-    text: 'Faculty, students, and heads sign up with the correct role from the public site.'
+    text: 'Register as a student, faculty member, department head, or administrator. Each role unlocks specific features and dashboard views tailored to academic responsibilities.'
   },
   {
     step: '02',
-    title: 'Search and request',
-    text: 'Students search by course code, title, or faculty. Faculty can submit new course proposals.'
+    title: 'Search and request enrollment',
+    text: 'Students browse available courses by code, title, or faculty member, then submit enrollment requests. Faculty receive notifications and can approve or provide feedback.'
   },
   {
     step: '03',
-    title: 'Review CLO and PLO',
-    text: 'Approvers see course outcomes, mappings, and the academic context before deciding.'
+    title: 'Verify outcomes before activation',
+    text: 'Department heads review course CLOs and PLO mappings to ensure academic alignment. Courses become active only after outcome verification is complete.'
   },
   {
     step: '04',
-    title: 'Measure and improve',
-    text: 'Results are evaluated with fuzzy logic, risk scoring, and outcome analytics.'
+    title: 'Assess and analyze results',
+    text: 'Faculty enter assessment marks, which are processed through fuzzy logic to generate attainment scores. Real-time dashboards show CLO achievement and program-level PLO analytics.'
   }
 ];
 
 const metrics = [
-  { value: '3', label: 'Public explainer pages' },
-  { value: '4', label: 'Role-aware dashboards' },
-  { value: '1', label: 'Unified approval pipeline' }
+  { value: '4', label: 'Role-specific dashboards' },
+  { value: '3', label: 'Explainer pages (Fuzzy, OBE, CLO-PLO)' },
+  { value: '1', label: 'Integrated outcome pipeline' }
 ];
 
 const HomePage = () => {
@@ -57,11 +57,10 @@ const HomePage = () => {
             <div className="hero-copy reveal reveal--1">
               <span className="eyebrow">Outcome-Based Education Platform</span>
               <h1 className="public-title">
-                A polished academic experience for enrollment, outcome tracking, and intelligent review.
+                Intelligent assessment management with fuzzy logic scoring and CLO-PLO alignment.
               </h1>
               <p className="public-lead">
-                The homepage, explainer pages, and dashboards now share the same blue-forward visual language,
-                so the platform feels like one product from the first click to the last report.
+                OBE Assess transforms how institutions manage student enrollment, measure learning outcomes, and evaluate program effectiveness. Built for faculty, students, department heads, and administrators, the platform provides role-based workflows, real-time analytics, and transparent outcome tracking from course request to achievement measurement.
               </p>
 
               <div className="hero-actions">
@@ -140,10 +139,9 @@ const HomePage = () => {
         <div className="public-container">
           <div className="section-head">
             <span className="section-kicker">Platform features</span>
-            <h2 className="section-title">Everything is connected, but every role gets a clean path.</h2>
+            <h2 className="section-title">Comprehensive tools for every stakeholder in the learning journey.</h2>
             <p className="section-copy">
-              The public site explains the system before login, and the dashboard reuses the same visual system
-              after login so the experience stays familiar.
+              From enrollment requests to outcome analysis, OBE Assess integrates every academic workflow. Students, faculty, and administrators collaborate through role-based interfaces that keep the system transparent and academically rigorous.
             </p>
           </div>
 
@@ -163,7 +161,7 @@ const HomePage = () => {
         <div className="public-container">
           <div className="section-head">
             <span className="section-kicker">How it works</span>
-            <h2 className="section-title">A clean academic workflow, not a pile of forms.</h2>
+            <h2 className="section-title">A structured academic workflow that scales from registration to degree completion.</h2>
           </div>
 
           <div className="timeline-grid">
@@ -182,46 +180,48 @@ const HomePage = () => {
         <div className="public-container">
           <div className="split-layout">
             <div className="info-stack reveal reveal--1">
-              <span className="section-kicker">Why it feels professional</span>
+              <span className="section-kicker">Built for institutional confidence</span>
               <h2 className="section-title">
-                The public pages and dashboards share the same color language and spacing rhythm.
+                Transparent, defensible, and audit-ready outcome management.
               </h2>
               <p className="section-copy">
-                That means a visitor can read the homepage, open the Fuzzy or OBE explanations, and then sign in
-                without feeling like they moved to a different system.
+                Every course request, approval, assessment, and result is logged and traced. The system maintains complete transparency for program reviews, accreditation visits, and academic audits.
               </p>
 
               <div className="info-grid">
                 <div className="info-card">
-                  <strong>Consistent UI</strong>
-                  <p>Blue accents, glass surfaces, and clean cards are used everywhere.</p>
+                  <strong>Audit trails</strong>
+                  <p>Every action is logged with user, timestamp, and justification for institutional confidence.</p>
                 </div>
                 <div className="info-card">
-                  <strong>Clear journeys</strong>
-                  <p>Every role has a dedicated path and a dedicated explanation page.</p>
+                  <strong>Outcome alignment</strong>
+                  <p>All assessments, enrollments, and analytics trace back to defined CLOs and PLOs.</p>
                 </div>
                 <div className="info-card">
                   <strong>Ready for viva</strong>
-                  <p>The platform logic is visible, not hidden behind vague labels.</p>
+                  <p>The complete academic logic is visible and explainable, not hidden in proprietary algorithms.</p>
                 </div>
               </div>
             </div>
 
             <div className="info-panel reveal reveal--2">
               <div className="glass-card glass-card--highlight">
-                <span className="section-kicker">Explore the concepts</span>
+                <span className="section-kicker">Learn the concepts</span>
+                <p className="section-copy">
+                  Understand the core systems powering the platform before you sign in.
+                </p>
                 <div className="quick-link-grid">
                   <Link to="/fuzzy" className="quick-link-card">
-                    <strong>Fuzzy</strong>
-                    <span>Why and how the score is calculated.</span>
+                    <strong>Fuzzy Logic</strong>
+                    <span>How assessment marks become attainment levels.</span>
                   </Link>
                   <Link to="/obe" className="quick-link-card">
-                    <strong>OBE</strong>
-                    <span>How outcomes drive the learning workflow.</span>
+                    <strong>OBE Framework</strong>
+                    <span>How outcomes drive the learning and assessment workflow.</span>
                   </Link>
                   <Link to="/clo-plo" className="quick-link-card">
-                    <strong>CLO PLO</strong>
-                    <span>How course outcomes map to program outcomes.</span>
+                    <strong>CLO-PLO Mapping</strong>
+                    <span>How course outcomes connect to program goals.</span>
                   </Link>
                 </div>
                 <div className="cta-row">
@@ -242,15 +242,15 @@ const HomePage = () => {
         <div className="public-container">
           <div className="cta-band reveal">
             <div>
-              <span className="section-kicker">Start here</span>
-              <h2 className="section-title">A clean landing page now supports the same system users see after login.</h2>
+              <span className="section-kicker">Ready to begin</span>
+              <h2 className="section-title">Join your institution's outcome-based assessment platform.</h2>
             </div>
             <div className="cta-band__actions">
               <Link className="public-button" to="/signup">
-                Sign Up
+                Create Account
               </Link>
               <Link className="public-button public-button--ghost" to="/login">
-                Login
+                Sign In
               </Link>
             </div>
           </div>

@@ -2,28 +2,29 @@ import { Link } from 'react-router-dom';
 
 const steps = [
   {
-    title: 'Normalize the raw marks',
-    text: 'Quiz, assignment, mid, and final scores are clamped into the 0-100 range before evaluation.'
+    title: 'Input normalization',
+    text: 'All assessment scores (quiz, assignment, midterm, final) are normalized to a 0-100 scale using min-max normalization to ensure consistent fuzzy processing.'
   },
   {
-    title: 'Fuzzify into memberships',
-    text: 'Each score becomes low, medium, and high membership values using triangular shapes.'
+    title: 'Triangular membership functions',
+    text: 'Each normalized score is converted into three membership values: Low, Medium, and High using triangular membership functions centered at 25, 50, and 75 respectively.'
   },
   {
-    title: 'Apply rules',
-    text: 'The system takes the minimum matching membership across each rule antecedent.'
+    title: 'Rule evaluation',
+    text: 'The system evaluates predefined fuzzy rules (e.g., "IF low AND low THEN low attainment"). The strength of each rule is determined by the minimum membership across the rule antecedents.'
   },
   {
-    title: 'Defuzzify',
-    text: 'The rule outputs are merged with centroid logic to create one crisp fuzzy score.'
+    title: 'Defuzzification & classification',
+    text: 'Rule outputs are combined using weighted average logic and defuzzified using centroid calculation. The final crisp value maps to Low, Medium, or High attainment classification.'
   }
 ];
 
 const rules = [
-  'All low marks tend to produce low attainment.',
-  'Strong mid and final scores push the output toward high attainment.',
-  'Mixed performance usually lands in the medium band.',
-  'A high final can still improve the overall score.'
+  'Consistently weak marks → Low attainment across assessments',
+  'Strong midterm and final scores → Push overall attainment toward High',
+  'Mixed performance across assessments → Medium attainment classification',
+  'High final score significantly improves overall outcome, even with earlier weak performance',
+  'Very low final score limits overall attainment, regardless of earlier strong assessments'
 ];
 
 const FuzzyPage = () => {
@@ -34,10 +35,9 @@ const FuzzyPage = () => {
           <div className="info-layout">
             <div className="info-copy reveal reveal--1">
               <span className="eyebrow">Fuzzy Logic Engine</span>
-              <h1 className="public-title">Why fuzzy scoring is used and how it is calculated.</h1>
+              <h1 className="public-title">Transform raw assessment marks into interpretable attainment levels.</h1>
               <p className="public-lead">
-                Raw marks are not always enough to explain student performance. Fuzzy logic turns exam marks into
-                low, medium, and high memberships, then combines them into a score that is easier to interpret.
+                Traditional pass/fail scoring loses important nuance in borderline cases. OBE Assess uses fuzzy logic to normalize exam marks into membership functions (low, medium, high), apply academic rules, and generate crisp attainment scores that are transparent and defensible for any academic audit.
               </p>
 
               <div className="hero-actions">
@@ -69,10 +69,9 @@ const FuzzyPage = () => {
         <div className="public-container">
           <div className="section-head">
             <span className="section-kicker">How it works</span>
-            <h2 className="section-title">The score is explainable from start to finish.</h2>
+            <h2 className="section-title">A mathematically sound pipeline from raw marks to attainment classification.</h2>
             <p className="section-copy">
-              The backend uses triangular membership functions and a rule base, so the result is not just a hidden
-              number. It is the output of a transparent academic scoring pipeline.
+              Every step is traceable and defensible. The backend implements industry-standard fuzzy logic with transparent rules, so any reviewer or academic auditor can verify the result logic.
             </p>
           </div>
 
@@ -92,11 +91,10 @@ const FuzzyPage = () => {
         <div className="public-container">
           <div className="split-layout">
             <div className="info-stack reveal reveal--1">
-              <span className="section-kicker">Why fuzzy helps</span>
-              <h2 className="section-title">It handles borderline cases better than a rigid pass/fail view.</h2>
+              <span className="section-kicker">Why fuzzy logic matters</span>
+              <h2 className="section-title">Better accuracy in borderline and mixed-performance cases.</h2>
               <p className="section-copy">
-                Two students can both score 58, but one may have a strong final exam and the other may have weak
-                consistency. Fuzzy logic keeps that nuance visible.
+                Consider two students both scoring 58 on a course. One scored low on quizzes but excelled in the final exam. The other was consistent throughout but never strong. Fuzzy logic preserves this performance pattern, leading to fairer and more nuanced outcome assessment.
               </p>
 
               <div className="info-grid">
@@ -110,23 +108,23 @@ const FuzzyPage = () => {
 
             <div className="info-panel reveal reveal--2">
               <div className="glass-card glass-card--highlight">
-                <span className="section-kicker">Attainment bands</span>
+                <span className="section-kicker">Standard attainment bands</span>
                 <div className="band-list">
                   <div className="band-list__item">
-                    <strong>Low</strong>
-                    <span>Below 40</span>
+                    <strong>Low attainment</strong>
+                    <span>Fuzzy score: 0–39</span>
                   </div>
                   <div className="band-list__item">
-                    <strong>Medium</strong>
-                    <span>40 to 69.99</span>
+                    <strong>Medium attainment</strong>
+                    <span>Fuzzy score: 40–69</span>
                   </div>
                   <div className="band-list__item">
-                    <strong>High</strong>
-                    <span>70 and above</span>
+                    <strong>High attainment</strong>
+                    <span>Fuzzy score: 70–100</span>
                   </div>
                 </div>
                 <p className="section-copy">
-                  This is the same logic the result engine uses when it assigns attainment levels and risk bands.
+                  These attainment bands are consistent across all CLO evaluations and dashboards. Risk and alert thresholds are derived from these same bands.
                 </p>
               </div>
             </div>

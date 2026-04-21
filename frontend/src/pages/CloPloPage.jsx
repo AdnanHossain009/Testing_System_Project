@@ -19,10 +19,11 @@ const examples = [
 ];
 
 const checklist = [
-  'The course has clear CLOs.',
-  'Each CLO is mapped to one or more PLOs.',
-  'The mapping weights are reasonable and balanced.',
-  'The department head reviews the mapping before approval.'
+  'Every course has clearly defined CLOs (typically 3–6 outcomes).',
+  'Each CLO is mapped to one or more PLOs with explicit weights (0.0–1.0).',
+  'Mapping weights are academically justified (e.g., CLO1 supports PLO2 with 0.6 weight).',
+  'Department head approves the mapping before the course becomes active.',
+  'Mapping is reused consistently in all assessment and analytics workflows.'
 ];
 
 const CloPloPage = () => {
@@ -33,10 +34,9 @@ const CloPloPage = () => {
           <div className="info-layout">
             <div className="info-copy reveal reveal--1">
               <span className="eyebrow">CLO to PLO mapping</span>
-              <h1 className="public-title">CLOs describe course goals. PLOs describe program goals.</h1>
+              <h1 className="public-title">How course outcomes connect to and support program goals.</h1>
               <p className="public-lead">
-                The platform uses weighted mappings so a course can show how strongly each learning outcome supports
-                the broader program structure.
+                Course Learning Outcomes (CLOs) are specific skills and knowledge students gain from a course. Program Learning Outcomes (PLOs) describe what graduates should achieve across the entire degree program. Weighted CLO-PLO mappings show how each course contributes to program-level goals, making curriculum alignment transparent and measurable.
               </p>
 
               <div className="hero-actions">
@@ -77,10 +77,9 @@ const CloPloPage = () => {
         <div className="public-container">
           <div className="section-head">
             <span className="section-kicker">Why it matters</span>
-            <h2 className="section-title">The mapping is what connects a course to the full program story.</h2>
+            <h2 className="section-title">Mapping proves curriculum coverage and program coherence.</h2>
             <p className="section-copy">
-              In this system, department heads inspect CLOs and PLO weights before a faculty course request becomes
-              active. That makes the approval flow academically meaningful.
+              Without explicit mappings, it is impossible to verify whether students actually encounter all program outcomes, or whether some are over-emphasized while others are neglected. Clear mappings make curriculum gaps visible and accountability auditable.
             </p>
           </div>
 
@@ -100,42 +99,40 @@ const CloPloPage = () => {
         <div className="public-container">
           <div className="split-layout">
             <div className="info-stack reveal reveal--1">
-              <span className="section-kicker">How it is used in the app</span>
-              <h2 className="section-title">Faculty submit the mapping when they request a new course.</h2>
+              <span className="section-kicker">How mapping works in OBE Assess</span>
+              <h2 className="section-title">Mapping is enforced at proposal, approval, and result stages.</h2>
               <p className="section-copy">
-                The department head checks the CLO list and PLO weights, then either approves the course or sends it
-                back for revision.
+                When faculty request a new course, they submit CLO descriptions and weighted PLO mappings. Department heads review and approve the mapping before the course activates. Assessment results are then scored and aggregated using the same mapping structure, ensuring consistency from planning through evaluation.
               </p>
 
               <div className="info-grid">
                 <div className="info-card">
-                  <strong>Transparency</strong>
-                  <p>The relationship between outcomes is visible instead of implicit.</p>
+                  <strong>Explicit alignment</strong>
+                  <p>Every CLO is deliberately mapped to program outcomes with documented weights.</p>
                 </div>
                 <div className="info-card">
-                  <strong>Consistency</strong>
-                  <p>The same mapping is reused in the result and analytics pipeline.</p>
+                  <strong>Verified by leadership</strong>
+                  <p>Department heads approve the mapping, confirming academic rigor and curriculum coherence.</p>
                 </div>
                 <div className="info-card">
-                  <strong>Accountability</strong>
-                  <p>Approvals happen with an academic justification, not just a course name.</p>
+                  <strong>Used in assessment</strong>
+                  <p>The same mapping is used to aggregate CLO results into PLO-level analytics and insights.</p>
                 </div>
               </div>
             </div>
 
             <div className="info-panel reveal reveal--2">
               <div className="glass-card glass-card--highlight">
-                <span className="section-kicker">Next action</span>
+                <span className="section-kicker">Get started</span>
                 <p className="section-copy">
-                  Want to see the full workflow? Sign in, browse the catalog, or create an account from the public
-                  homepage.
+                  Ready to implement outcome-based assessment? Create an account, propose a course, and define your CLOs and PLO mappings. The full system guides you through each step.
                 </p>
                 <div className="cta-row">
                   <Link className="public-button" to="/signup">
-                    Sign Up
+                    Create Account
                   </Link>
                   <Link className="public-button public-button--ghost" to="/login">
-                    Login
+                    Sign In
                   </Link>
                 </div>
               </div>

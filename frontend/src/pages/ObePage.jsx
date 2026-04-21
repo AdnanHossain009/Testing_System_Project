@@ -2,24 +2,26 @@ import { Link } from 'react-router-dom';
 
 const pillars = [
   {
-    title: 'Define outcomes',
-    text: 'Every course has clear CLOs, and each program defines the broader PLOs it expects.'
+    title: 'Define clear learning outcomes',
+    text: 'Every course specifies its Course Learning Outcomes (CLOs), and each program articulates its Program Learning Outcomes (PLOs). Outcomes are measurable, specific, and aligned with institutional mission.'
   },
   {
-    title: 'Measure attainment',
-    text: 'Assessments are linked to CLOs so scores can be aggregated into meaningful outcomes.'
+    title: 'Measure and assess achievement',
+    text: 'Multiple assessments (quizzes, assignments, exams, projects) collect evidence of CLO attainment. Results are aggregated using fuzzy logic to produce transparent, defensible attainment scores.'
   },
   {
-    title: 'Improve teaching',
-    text: 'Weak outcomes highlight where instruction, assessments, or mappings need adjustment.'
+    title: 'Use data to improve',
+    text: 'Dashboards highlight weak CLOs and PLOs, guiding curriculum revision, instructor professional development, and assessment redesign. The feedback loop is transparent and actionable.'
   }
 ];
 
 const flow = [
-  'Assessments collect raw performance data.',
-  'CLO attainment is computed from those assessments.',
-  'CLO-PLO mapping converts course outcome data into program-level insight.',
-  'Dashboards summarize the result for faculty, heads, and students.'
+  'Faculty define CLOs when proposing a course and map CLOs to PLOs with weighted contributions.',
+  'Department heads verify CLO clarity and PLO alignment before course activation.',
+  'Faculty create and link assessments to specific CLOs during course delivery.',
+  'Assessment results are normalized and fuzzified into CLO attainment scores.',
+  'CLO scores are aggregated and rolled up into PLO attainment at the program level.',
+  'Dashboards display CLO and PLO attainment trends to inform continuous improvement.'
 ];
 
 const ObePage = () => {
@@ -30,10 +32,9 @@ const ObePage = () => {
           <div className="info-layout">
             <div className="info-copy reveal reveal--1">
               <span className="eyebrow">Outcome-Based Education</span>
-              <h1 className="public-title">OBE explains what students should achieve, not only what they score.</h1>
+              <h1 className="public-title">Learning outcomes define success, not just grades and rankings.</h1>
               <p className="public-lead">
-                In this platform, OBE is visible in the way courses are built, assessments are mapped, and results
-                are converted into CLO and PLO attainment.
+                Outcome-Based Education shifts focus from input measures (hours taught) to output measures (what students actually achieve). OBE Assess embeds this philosophy into every decision: course requests are validated by CLO clarity, assessments are linked to outcomes, and analytics report on CLO attainment rather than raw scores alone.
               </p>
 
               <div className="hero-actions">
@@ -65,10 +66,9 @@ const ObePage = () => {
         <div className="public-container">
           <div className="section-head">
             <span className="section-kicker">Why it matters</span>
-            <h2 className="section-title">The app keeps OBE visible at every layer.</h2>
+            <h2 className="section-title">Outcomes drive accountability, improvement, and institutional credibility.</h2>
             <p className="section-copy">
-              Course creation, result evaluation, and analytics all reference the same outcome structure. That makes
-              the system easier to defend in a viva or review session.
+              When every course, every assessment, and every result traces back to defined outcomes, the institution can demonstrate that its programs work. This transparency is essential for accreditation, program reviews, and stakeholder confidence.
             </p>
           </div>
 
@@ -88,49 +88,52 @@ const ObePage = () => {
         <div className="public-container">
           <div className="split-layout">
             <div className="info-stack reveal reveal--1">
-              <span className="section-kicker">How this app uses OBE</span>
-              <h2 className="section-title">Course requests only become real courses after outcome review.</h2>
+              <span className="section-kicker">How OBE is implemented</span>
+              <h2 className="section-title">OBE is enforced at every stage: proposal, approval, assessment, and analysis.</h2>
               <p className="section-copy">
-                Faculty course proposals include CLOs and CLO-PLO mappings. Department heads check them before
-                approval, so the created course already fits the outcome model.
+                Faculty cannot activate a course without defining CLOs and PLO mappings. Department heads validate those mappings before approval. Assessment results flow into CLO dashboards. Analytics always trace back to outcomes, never just to grades.
               </p>
 
               <div className="info-grid">
                 <div className="info-card">
-                  <strong>CLOs</strong>
-                  <p>Course-level statements that can be measured through assessments.</p>
+                  <strong>CLO Definition</strong>
+                  <p>Measurable statements of what students will know and do after completing the course.</p>
                 </div>
                 <div className="info-card">
-                  <strong>PLOs</strong>
-                  <p>Program-level goals that show the broader capability students should gain.</p>
+                  <strong>PLO Alignment</strong>
+                  <p>Each CLO is explicitly weighted to one or more program-level outcomes, showing how the course supports broader degree goals.</p>
                 </div>
                 <div className="info-card">
-                  <strong>Attainment</strong>
-                  <p>The numeric summary that tells whether the course outcomes were achieved.</p>
+                  <strong>Outcome Attainment</strong>
+                  <p>Fuzzy-scored evidence showing whether students achieved CLO targets, aggregated to assess PLO effectiveness.</p>
                 </div>
               </div>
             </div>
 
             <div className="info-panel reveal reveal--2">
               <div className="glass-card glass-card--highlight">
-                <span className="section-kicker">Result engine connection</span>
+                <span className="section-kicker">Result & analytics pipeline</span>
                 <div className="band-list">
                   <div className="band-list__item">
-                    <strong>Assessments</strong>
-                    <span>Feed raw marks into the scoring pipeline.</span>
+                    <strong>Assessment input</strong>
+                    <span>Raw marks linked to specific CLOs.</span>
                   </div>
                   <div className="band-list__item">
-                    <strong>CLO diagnostics</strong>
-                    <span>Show why a CLO is strong or weak.</span>
+                    <strong>CLO scoring</strong>
+                    <span>Marks fuzzified into Low/Medium/High attainment.</span>
                   </div>
                   <div className="band-list__item">
-                    <strong>PLO charts</strong>
-                    <span>Summarize the program-level picture.</span>
+                    <strong>PLO aggregation</strong>
+                    <span>CLO results rolled up to program-level analytics.</span>
+                  </div>
+                  <div className="band-list__item">
+                    <strong>Improvement loop</strong>
+                    <span>Trends inform curriculum and instruction changes.</span>
                   </div>
                 </div>
                 <div className="cta-row">
                   <Link className="public-button" to="/signup">
-                    Explore the system
+                    Start using OBE Assess
                   </Link>
                   <Link className="public-button public-button--ghost" to="/login">
                     Sign In
