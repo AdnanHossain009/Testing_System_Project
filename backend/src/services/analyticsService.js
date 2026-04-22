@@ -2,6 +2,7 @@ const Result = require('../models/Result');
 const Assessment = require('../models/Assessment');
 const CLOPLOMapping = require('../models/CLOPLOMapping');
 const Program = require('../models/Program');
+const Course = require('../models/Course');
 const { buildClassCloAttainment } = require('./cloEvaluationService');
 
 const round = (value) => Number((value || 0).toFixed(2));
@@ -258,11 +259,118 @@ const buildProgramAnalytics = async (departmentId) => {
   }));
 };
 
+const buildInstitutionAnalytics = async () => {
+  const [programs, courses, mappings, results] = await Promise.all([
+    Program.find().populate('department', 'name code').lean(),
+    Course.find({ active: true })
+      .populate('department', 'name code')
+      .populate('program', 'name code')
+      .lean(),
+    CLOPLOMapping.find().lean(),
+    Result.find({}, 'course fuzzyScore updatedAt').lean()
+  ]);
+
+  const courseById = new Map(courses.map((course) => [String(course._id), course]));
+  const mappingByCourse = new Map(mappings.map((item) => [String(item.course), item]));
+  const latestResultByCourse = new Map();
+  const programBucket = new Map(
+    programs.map((program) => [
+      String(program._id),
+      {
+        programId: String(program._id),
+        programCode: program.code,
+        programName: program.name,
+        departmentCode: program.department?.code || 'N/A',
+        totalFuzzy: 0,
+        count: 0
+      }
+    ])
+  );
+
+  results.forEach((result) => {
+    const course = courseById.get(String(result.course));
+    if (!course) {
+      return;
+    }
+
+    const programKey = String(course.program?._id || course.program);
+    const bucket = programBucket.get(programKey);
+
+    if (bucket) {
+      bucket.totalFuzzy += result.fuzzyScore || 0;
+      bucket.count += 1;
+    }
+
+    const currentLatest = latestResultByCourse.get(String(result.course));
+    if (!currentLatest || new Date(result.updatedAt).getTime() > new Date(currentLatest).getTime()) {
+      latestResultByCourse.set(String(result.course), result.updatedAt);
+    }
+  });
+
+  const recentSnapshots = await Promise.all(
+    courses.map(async (course) => {
+      const analytics = await buildCourseAnalytics(course._id);
+      const mapping = mappingByCourse.get(String(course._id));
+      const weakClos = (analytics.classCloAttainment || []).filter((item) => !item.attained).length;
+      const weakPlos = (analytics.ploChart || []).filter((item) => Number(item.score) < 60).length;
+
+      return {
+        courseId: String(course._id),
+        courseCode: course.code,
+        courseName: course.name,
+        departmentCode: course.department?.code || 'N/A',
+        programCode: course.program?.code || 'N/A',
+        averageFuzzy: analytics.averageFuzzy,
+        totalStudents: analytics.totalStudents,
+        weakClos,
+        weakPlos,
+        weakStudents: analytics.weakStudents.length,
+        mappingRows: mapping?.mappings?.length || 0,
+        lastEvaluatedAt: latestResultByCourse.get(String(course._id)) || course.updatedAt
+      };
+    })
+  );
+
+  const weakClos = recentSnapshots.reduce((sum, item) => sum + item.weakClos, 0);
+  const weakPlos = recentSnapshots.reduce((sum, item) => sum + item.weakPlos, 0);
+  const totalClos = courses.reduce((sum, course) => sum + (course.clos?.length || 0), 0);
+  const totalPlos = programs.reduce((sum, program) => sum + (program.plos?.length || 0), 0);
+  const mappedCourses = recentSnapshots.filter((item) => item.mappingRows > 0).length;
+
+  return {
+    totalPrograms: programs.length,
+    totalCourses: courses.length,
+    totalWeakOutcomes: weakClos + weakPlos,
+    totalPendingActionItems: 0,
+    recentSnapshots: recentSnapshots
+      .sort((a, b) => new Date(b.lastEvaluatedAt).getTime() - new Date(a.lastEvaluatedAt).getTime())
+      .slice(0, 6),
+    mappingSummary: {
+      mappedCourses,
+      unmappedCourses: Math.max(courses.length - mappedCourses, 0),
+      totalMappingRows: mappings.reduce((sum, item) => sum + (item.mappings?.length || 0), 0)
+    },
+    outcomeSummary: {
+      totalClos,
+      totalPlos,
+      weakClos,
+      weakPlos
+    },
+    programAnalytics: Array.from(programBucket.values())
+      .map((item) => ({
+        ...item,
+        averageFuzzy: round(item.totalFuzzy / (item.count || 1))
+      }))
+      .sort((a, b) => a.programCode.localeCompare(b.programCode))
+  };
+};
+
 module.exports = {
   computeWeightedAverage,
   computeRisk,
   computeOBEAttainment,
   normalizeMarksForEvaluation,
   buildCourseAnalytics,
-  buildProgramAnalytics
+  buildProgramAnalytics,
+  buildInstitutionAnalytics
 };

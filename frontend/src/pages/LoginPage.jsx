@@ -7,18 +7,20 @@ const destinationByRole = {
   admin: '/dashboard/admin',
   faculty: '/dashboard/faculty',
   student: '/dashboard/student',
-  head: '/dashboard/head'
+  head: '/dashboard/head',
+  accreditation_officer: '/dashboard/accreditation'
 };
 
 const roleLabels = {
   admin: 'Admin',
   faculty: 'Faculty',
   student: 'Student',
-  head: 'Head'
+  head: 'Head',
+  accreditation_officer: 'Accreditation Officer'
 };
 
 const roleOptionsByMode = {
-  login: ['admin', 'faculty', 'student', 'head'],
+  login: ['admin', 'faculty', 'student', 'head', 'accreditation_officer'],
   signup: ['faculty', 'student', 'head']
 };
 
@@ -354,12 +356,14 @@ const LoginPage = ({ initialMode = 'login' }) => {
                   <strong>Signup rules</strong>
                   <p>Faculty, student, and head accounts are allowed here.</p>
                   <p>Admin registration stays locked to the setup flow.</p>
+                  <p>Accreditation officer accounts are created by admins.</p>
                   <p>Your account will be saved in MongoDB and ready for sign in.</p>
                 </div>
               ) : (
                 <div className="login-page-pro__demo">
                   <strong>Seeded Demo Users</strong>
                   <p>admin@example.com / Admin123!</p>
+                  <p>accreditation@example.com / Accred123!</p>
                   <p>faculty@example.com / Faculty123!</p>
                   <p>student1@example.com / Student123!</p>
                   <p>head@example.com / Head123!</p>

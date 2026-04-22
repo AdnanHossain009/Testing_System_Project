@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
+import { useAuth } from '../context/AuthContext';
 
 const initialForm = { name: '', code: '', department: '', plosText: 'PLO1|Engineering knowledge' };
 
@@ -16,6 +17,8 @@ const parsePLOs = (text) =>
     });
 
 const ProgramsPage = () => {
+  const { user } = useAuth();
+  const canManage = ['admin', 'head'].includes(user?.role);
   const [departments, setDepartments] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [form, setForm] = useState(initialForm);
@@ -56,39 +59,45 @@ const ProgramsPage = () => {
     <div>
       <div className="page-header">
         <h1>Programs</h1>
-        <p className="muted">Create academic programs and enter PLO definitions.</p>
+        <p className="muted">
+          {canManage
+            ? 'Create academic programs and enter PLO definitions.'
+            : 'Review academic programs, PLO definitions, and linked institutional outcome structures.'}
+        </p>
       </div>
 
-      <div className="grid grid-2">
-        <form className="card" onSubmit={submitHandler}>
-          <h3>Create Program</h3>
-          <label>Name</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+      <div className={canManage ? 'grid grid-2' : ''}>
+        {canManage ? (
+          <form className="card" onSubmit={submitHandler}>
+            <h3>Create Program</h3>
+            <label>Name</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
-          <label>Code</label>
-          <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+            <label>Code</label>
+            <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
 
-          <label>Department</label>
-          <select
-            value={form.department}
-            onChange={(e) => setForm({ ...form, department: e.target.value })}
-          >
-            {departments.map((item) => (
-              <option value={item._id} key={item._id}>
-                {item.code} - {item.name}
-              </option>
-            ))}
-          </select>
+            <label>Department</label>
+            <select
+              value={form.department}
+              onChange={(e) => setForm({ ...form, department: e.target.value })}
+            >
+              {departments.map((item) => (
+                <option value={item._id} key={item._id}>
+                  {item.code} - {item.name}
+                </option>
+              ))}
+            </select>
 
-          <label>PLOs (one per line, format: code|description)</label>
-          <textarea
-            rows="6"
-            value={form.plosText}
-            onChange={(e) => setForm({ ...form, plosText: e.target.value })}
-          />
+            <label>PLOs (one per line, format: code|description)</label>
+            <textarea
+              rows="6"
+              value={form.plosText}
+              onChange={(e) => setForm({ ...form, plosText: e.target.value })}
+            />
 
-          <button className="btn">Save Program</button>
-        </form>
+            <button className="btn">Save Program</button>
+          </form>
+        ) : null}
 
         <div className="card">
           <h3>Existing Programs</h3>

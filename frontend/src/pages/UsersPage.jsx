@@ -7,36 +7,102 @@ const roleLabels = {
   admin: 'Admin',
   faculty: 'Faculty',
   student: 'Student',
-  head: 'HOD'
+  head: 'Department Head',
+  accreditation_officer: 'Accreditation Officer'
 };
+
+const initialCreateForm = {
+  name: '',
+  email: '',
+  password: '',
+  role: 'faculty',
+  department: '',
+  program: '',
+  studentId: '',
+  facultyId: ''
+};
+
+const initialEditForm = {
+  name: '',
+  role: 'faculty',
+  department: '',
+  program: '',
+  studentId: '',
+  facultyId: '',
+  isActive: true
+};
+
+const getProgramsForDepartment = (programs, departmentId) =>
+  departmentId
+    ? programs.filter((item) => String(item.department?._id || item.department) === String(departmentId))
+    : programs;
+
+const normalizeDraft = (draft) => ({
+  ...draft,
+  studentId: draft.role === 'student' ? draft.studentId : '',
+  facultyId: draft.role === 'faculty' ? draft.facultyId : ''
+});
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [programs, setPrograms] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [roleFilter, setRoleFilter] = useState('');
+  const [createForm, setCreateForm] = useState(initialCreateForm);
+  const [editForm, setEditForm] = useState(initialEditForm);
+  const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const hydrateUsers = (list, preferredUserId) => {
+    setUsers(list);
+    setSelectedUser((current) => {
+      const nextId = preferredUserId || current?._id;
+      if (nextId) {
+        return list.find((item) => item._id === nextId) || list[0] || null;
+      }
+
+      return list[0] || null;
+    });
+  };
 
   useEffect(() => {
     let active = true;
 
     const loadUsers = async () => {
       setLoading(true);
-      const response = await api.get('/users', {
-        params: roleFilter ? { role: roleFilter } : {}
-      });
+      try {
+        const [userResponse, departmentResponse, programResponse] = await Promise.all([
+          api.get('/users', {
+            params: roleFilter ? { role: roleFilter } : {}
+          }),
+          api.get('/departments'),
+          api.get('/programs')
+        ]);
 
-      if (!active) return;
+        if (!active) return;
 
-      const list = response.data.data.users || [];
-      setUsers(list);
-      setSelectedUser((current) => {
-        if (current) {
-          return list.find((item) => item._id === current._id) || list[0] || null;
+        const list = userResponse.data.data.users || [];
+        const departmentList = departmentResponse.data.data.departments || [];
+        const programList = programResponse.data.data.programs || [];
+
+        setDepartments(departmentList);
+        setPrograms(programList);
+        hydrateUsers(list);
+        setCreateForm((current) => ({
+          ...current,
+          department: current.department || departmentList[0]?._id || '',
+          program: current.program || getProgramsForDepartment(programList, current.department || departmentList[0]?._id || '')[0]?._id || ''
+        }));
+      } catch (error) {
+        if (!active) return;
+        setFeedback(error?.response?.data?.message || 'Failed to load users.');
+      } finally {
+        if (active) {
+          setLoading(false);
         }
-
-        return list[0] || null;
-      });
-      setLoading(false);
+      }
     };
 
     loadUsers();
@@ -46,12 +112,100 @@ const UsersPage = () => {
     };
   }, [roleFilter]);
 
+  useEffect(() => {
+    if (!selectedUser) {
+      setEditForm(initialEditForm);
+      return;
+    }
+
+    setEditForm({
+      name: selectedUser.name || '',
+      role: selectedUser.role || 'faculty',
+      department: selectedUser.department?._id || '',
+      program: selectedUser.program?._id || '',
+      studentId: selectedUser.studentId || '',
+      facultyId: selectedUser.facultyId || '',
+      isActive: selectedUser.isActive ?? true
+    });
+  }, [selectedUser]);
+
+  const refreshUsers = async (preferredUserId) => {
+    const response = await api.get('/users', {
+      params: roleFilter ? { role: roleFilter } : {}
+    });
+
+    hydrateUsers(response.data.data.users || [], preferredUserId);
+  };
+
+  const handleCreateDepartmentChange = (departmentId) => {
+    const availablePrograms = getProgramsForDepartment(programs, departmentId);
+    setCreateForm((current) => ({
+      ...current,
+      department: departmentId,
+      program: availablePrograms.find((item) => item._id === current.program)?._id || availablePrograms[0]?._id || ''
+    }));
+  };
+
+  const handleEditDepartmentChange = (departmentId) => {
+    const availablePrograms = getProgramsForDepartment(programs, departmentId);
+    setEditForm((current) => ({
+      ...current,
+      department: departmentId,
+      program: availablePrograms.find((item) => item._id === current.program)?._id || availablePrograms[0]?._id || ''
+    }));
+  };
+
+  const createProgramOptions = getProgramsForDepartment(programs, createForm.department);
+  const editProgramOptions = getProgramsForDepartment(programs, editForm.department);
+
+  const createUser = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setFeedback('');
+
+    try {
+      await api.post('/users', normalizeDraft(createForm));
+      setFeedback('User created successfully.');
+      setCreateForm((current) => ({
+        ...initialCreateForm,
+        department: current.department,
+        program: current.program
+      }));
+      await refreshUsers();
+    } catch (error) {
+      setFeedback(error?.response?.data?.message || 'Failed to create user.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateUser = async (event) => {
+    event.preventDefault();
+
+    if (!selectedUser) return;
+
+    setSaving(true);
+    setFeedback('');
+
+    try {
+      await api.patch(`/users/${selectedUser._id}`, normalizeDraft(editForm));
+      setFeedback('User updated successfully.');
+      await refreshUsers(selectedUser._id);
+    } catch (error) {
+      setFeedback(error?.response?.data?.message || 'Failed to update user.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <Loading text="Loading users..." />;
 
   const totals = {
     total: users.length,
     admin: users.filter((item) => item.role === 'admin').length,
     faculty: users.filter((item) => item.role === 'faculty').length,
+    head: users.filter((item) => item.role === 'head').length,
+    accreditationOfficer: users.filter((item) => item.role === 'accreditation_officer').length,
     student: users.filter((item) => item.role === 'student').length
   };
 
@@ -60,15 +214,227 @@ const UsersPage = () => {
       <div className="page-header">
         <h1>Users</h1>
         <p className="muted">
-          View all registered accounts and inspect department, program, and role-level details.
+          View all registered accounts, create role-based users, and manage institutional access without disturbing current workflows.
         </p>
       </div>
+
+      {feedback ? <div className={feedback.toLowerCase().includes('failed') ? 'error-box' : 'success-box'}>{feedback}</div> : null}
 
       <div className="grid grid-4">
         <StatCard label="Total Users" value={totals.total} />
         <StatCard label="Admins" value={totals.admin} />
         <StatCard label="Faculty" value={totals.faculty} />
+        <StatCard label="Department Heads" value={totals.head} />
+        <StatCard label="Accreditation Officers" value={totals.accreditationOfficer} />
         <StatCard label="Students" value={totals.student} />
+      </div>
+
+      <div className="grid grid-2" style={{ marginBottom: '1rem' }}>
+        <form className="card" onSubmit={createUser}>
+          <h3>Create User</h3>
+          <p className="muted">
+            Admins can create <code>accreditation_officer</code> accounts here for institutional accreditation workflows.
+          </p>
+
+          <div className="grid grid-2">
+            <div>
+              <label>Name</label>
+              <input
+                value={createForm.name}
+                onChange={(event) => setCreateForm((current) => ({ ...current, name: event.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label>Email</label>
+              <input
+                type="email"
+                value={createForm.email}
+                onChange={(event) => setCreateForm((current) => ({ ...current, email: event.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label>Password</label>
+              <input
+                type="password"
+                value={createForm.password}
+                onChange={(event) => setCreateForm((current) => ({ ...current, password: event.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label>Role</label>
+              <select
+                value={createForm.role}
+                onChange={(event) =>
+                  setCreateForm((current) =>
+                    normalizeDraft({
+                      ...current,
+                      role: event.target.value
+                    })
+                  )
+                }
+              >
+                {Object.keys(roleLabels).map((role) => (
+                  <option value={role} key={role}>
+                    {roleLabels[role]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Department</label>
+              <select value={createForm.department} onChange={(event) => handleCreateDepartmentChange(event.target.value)}>
+                <option value="">Not Assigned</option>
+                {departments.map((item) => (
+                  <option value={item._id} key={item._id}>
+                    {item.code} - {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Program</label>
+              <select
+                value={createForm.program}
+                onChange={(event) => setCreateForm((current) => ({ ...current, program: event.target.value }))}
+              >
+                <option value="">Not Assigned</option>
+                {createProgramOptions.map((item) => (
+                  <option value={item._id} key={item._id}>
+                    {item.code} - {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Student ID</label>
+              <input
+                value={createForm.studentId}
+                onChange={(event) => setCreateForm((current) => ({ ...current, studentId: event.target.value }))}
+                disabled={createForm.role !== 'student'}
+              />
+            </div>
+            <div>
+              <label>Faculty ID</label>
+              <input
+                value={createForm.facultyId}
+                onChange={(event) => setCreateForm((current) => ({ ...current, facultyId: event.target.value }))}
+                disabled={createForm.role !== 'faculty'}
+              />
+            </div>
+          </div>
+
+          <button className="btn" disabled={saving}>
+            {saving ? 'Saving...' : 'Create User'}
+          </button>
+        </form>
+
+        <form className="card" onSubmit={updateUser}>
+          <h3>Update User</h3>
+          {selectedUser ? (
+            <>
+              <p className="muted">
+                Update the selected user’s role, assignment, and active status. Email changes stay self-managed through account settings.
+              </p>
+
+              <div className="grid grid-2">
+                <div>
+                  <label>Name</label>
+                  <input
+                    value={editForm.name}
+                    onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label>Email</label>
+                  <input value={selectedUser.email} disabled />
+                </div>
+                <div>
+                  <label>Role</label>
+                  <select
+                    value={editForm.role}
+                    onChange={(event) =>
+                      setEditForm((current) =>
+                        normalizeDraft({
+                          ...current,
+                          role: event.target.value
+                        })
+                      )
+                    }
+                  >
+                    {Object.keys(roleLabels).map((role) => (
+                      <option value={role} key={role}>
+                        {roleLabels[role]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label>Account Status</label>
+                  <select
+                    value={String(editForm.isActive)}
+                    onChange={(event) =>
+                      setEditForm((current) => ({ ...current, isActive: event.target.value === 'true' }))
+                    }
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Department</label>
+                  <select value={editForm.department} onChange={(event) => handleEditDepartmentChange(event.target.value)}>
+                    <option value="">Not Assigned</option>
+                    {departments.map((item) => (
+                      <option value={item._id} key={item._id}>
+                        {item.code} - {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label>Program</label>
+                  <select
+                    value={editForm.program}
+                    onChange={(event) => setEditForm((current) => ({ ...current, program: event.target.value }))}
+                  >
+                    <option value="">Not Assigned</option>
+                    {editProgramOptions.map((item) => (
+                      <option value={item._id} key={item._id}>
+                        {item.code} - {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label>Student ID</label>
+                  <input
+                    value={editForm.studentId}
+                    onChange={(event) => setEditForm((current) => ({ ...current, studentId: event.target.value }))}
+                    disabled={editForm.role !== 'student'}
+                  />
+                </div>
+                <div>
+                  <label>Faculty ID</label>
+                  <input
+                    value={editForm.facultyId}
+                    onChange={(event) => setEditForm((current) => ({ ...current, facultyId: event.target.value }))}
+                    disabled={editForm.role !== 'faculty'}
+                  />
+                </div>
+              </div>
+
+              <button className="btn" disabled={saving}>
+                {saving ? 'Saving...' : 'Update User'}
+              </button>
+            </>
+          ) : (
+            <p className="muted">Select a user from the directory to manage the account.</p>
+          )}
+        </form>
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>

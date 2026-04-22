@@ -4,6 +4,14 @@ import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
 
+const roleLabels = {
+  admin: 'Admin',
+  faculty: 'Faculty',
+  student: 'Student',
+  head: 'Department Head',
+  accreditation_officer: 'Accreditation Officer'
+};
+
 const AdminDashboard = () => {
   const [data, setData] = useState(null);
 
@@ -54,7 +62,7 @@ const AdminDashboard = () => {
           <tbody>
             {data.roleStats.map((item) => (
               <tr key={item._id}>
-                <td>{item._id}</td>
+                <td>{roleLabels[item._id] || item._id}</td>
                 <td>{item.count}</td>
               </tr>
             ))}

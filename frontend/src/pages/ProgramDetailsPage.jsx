@@ -3,8 +3,10 @@ import { Link, useParams } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
+import { useAuth } from '../context/AuthContext';
 
 const ProgramDetailsPage = () => {
+  const { user } = useAuth();
   const { programId } = useParams();
   const [programs, setPrograms] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -13,20 +15,30 @@ const ProgramDetailsPage = () => {
 
   useEffect(() => {
     const run = async () => {
-      const [programResponse, courseResponse, headSummaryResponse] = await Promise.all([
-        api.get('/programs'),
-        api.get('/courses', { params: { programId } }),
-        api.get('/analytics/head-summary')
-      ]);
+      if (!user?.role) {
+        return;
+      }
 
-      setPrograms(programResponse.data.data.programs || []);
-      setCourses(courseResponse.data.data.courses || []);
-      setAnalytics(headSummaryResponse.data.data);
-      setLoading(false);
+      const summaryEndpoint =
+        user?.role === 'head' ? '/analytics/head-summary' : '/analytics/accreditation-summary';
+
+      try {
+        const [programResponse, courseResponse, summaryResponse] = await Promise.all([
+          api.get('/programs'),
+          api.get('/courses', { params: { programId } }),
+          api.get(summaryEndpoint)
+        ]);
+
+        setPrograms(programResponse.data.data.programs || []);
+        setCourses(courseResponse.data.data.courses || []);
+        setAnalytics(summaryResponse.data.data);
+      } finally {
+        setLoading(false);
+      }
     };
 
     run();
-  }, [programId]);
+  }, [programId, user?.role]);
 
   const program = useMemo(
     () => programs.find((item) => item._id === programId) || null,

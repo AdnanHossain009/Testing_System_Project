@@ -5,9 +5,11 @@ const asyncHandler = require('../utils/asyncHandler');
 const { logAction } = require('../services/auditService');
 
 const listCourses = asyncHandler(async (req, res) => {
-  const filter = req.user.role === 'admin' ? {} : { active: true };
+  const isAdmin = req.user.role === 'admin';
+  const isAccreditationOfficer = req.user.role === 'accreditation_officer';
+  const filter = isAdmin ? {} : { active: true };
 
-  if (req.user.role !== 'admin') {
+  if (!isAdmin && !isAccreditationOfficer) {
     if (req.user.role === 'faculty' && req.query.scope === 'assigned') {
       filter.faculty = req.user._id;
     }
@@ -25,7 +27,7 @@ const listCourses = asyncHandler(async (req, res) => {
     }
   }
 
-  if (req.user.role === 'admin') {
+  if (isAdmin || isAccreditationOfficer) {
     if (req.query.programId) filter.program = req.query.programId;
     if (req.query.departmentId) filter.department = req.query.departmentId;
   } else {

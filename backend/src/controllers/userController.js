@@ -3,6 +3,13 @@ const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { logAction } = require('../services/auditService');
 
+const normalizeRoleFields = ({ role, studentId, facultyId, ...rest }) => ({
+  ...rest,
+  role,
+  studentId: role === 'student' ? studentId : '',
+  facultyId: role === 'faculty' ? facultyId : ''
+});
+
 const listUsers = asyncHandler(async (req, res) => {
   const filter = {};
   if (req.query.role) filter.role = req.query.role;
@@ -31,16 +38,18 @@ const createUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists.');
   }
 
-  const user = await User.create({
-    name,
-    email,
-    password,
-    role,
-    department,
-    program,
-    studentId,
-    facultyId
-  });
+  const user = await User.create(
+    normalizeRoleFields({
+      name,
+      email,
+      password,
+      role,
+      department,
+      program,
+      studentId,
+      facultyId
+    })
+  );
 
   await logAction({
     actor: req.user._id,
@@ -67,6 +76,14 @@ const updateUser = asyncHandler(async (req, res) => {
       user[field] = req.body[field];
     }
   });
+
+  if (user.role !== 'student') {
+    user.studentId = '';
+  }
+
+  if (user.role !== 'faculty') {
+    user.facultyId = '';
+  }
 
   await user.save();
 

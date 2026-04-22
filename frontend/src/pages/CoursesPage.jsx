@@ -45,7 +45,7 @@ const formatDate = (value) => (value ? new Date(value).toLocaleString() : 'N/A')
 const CoursesPage = () => {
   const { user } = useAuth();
   const canManage = ['admin', 'head'].includes(user?.role);
-  const canViewDetails = ['admin', 'faculty', 'head'].includes(user?.role);
+  const canViewDetails = ['admin', 'faculty', 'head', 'accreditation_officer'].includes(user?.role);
   const isStudent = user?.role === 'student';
 
   const [courses, setCourses] = useState([]);

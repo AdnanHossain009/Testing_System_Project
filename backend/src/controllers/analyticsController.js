@@ -7,7 +7,8 @@ const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const {
   buildCourseAnalytics,
-  buildProgramAnalytics
+  buildProgramAnalytics,
+  buildInstitutionAnalytics
 } = require('../services/analyticsService');
 const { buildStudentAnalytics } = require('../services/studentAnalyticsService');
 
@@ -144,6 +145,12 @@ const headSummary = asyncHandler(async (req, res) => {
   }, 'Head analytics fetched.');
 });
 
+const accreditationSummary = asyncHandler(async (req, res) => {
+  const summary = await buildInstitutionAnalytics();
+
+  return success(res, summary, 'Accreditation analytics fetched.');
+});
+
 const courseAnalytics = asyncHandler(async (req, res) => {
   const analytics = await buildCourseAnalytics(req.params.courseId);
   return success(res, analytics, 'Course analytics fetched.');
@@ -159,6 +166,7 @@ module.exports = {
   facultySummary,
   studentSummary,
   headSummary,
+  accreditationSummary,
   courseAnalytics,
   weakStudentsByCourse
 };

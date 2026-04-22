@@ -1,6 +1,14 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const roleLabels = {
+  admin: 'Admin',
+  faculty: 'Faculty',
+  student: 'Student',
+  head: 'Department Head',
+  accreditation_officer: 'Accreditation Officer'
+};
+
 const menuByRole = {
   admin: [
     { to: '/dashboard/admin', label: 'Dashboard' },
@@ -41,6 +49,18 @@ const menuByRole = {
     { to: '/analytics', label: 'Analytics' },
     { to: '/account', label: 'Account Settings' },
     { to: '/notifications', label: 'Notifications' }
+  ],
+  accreditation_officer: [
+    { to: '/dashboard/accreditation', label: 'Accreditation Dashboard' },
+    { to: '/accreditation/improvement-plans', label: 'Improvement Plans' },
+    { to: '/accreditation/evidence-manager', label: 'Evidence Manager' },
+    { to: '/accreditation/curriculum-governance', label: 'Curriculum Governance' },
+    { to: '/accreditation/reports', label: 'Accreditation Reports' },
+    { to: '/programs', label: 'Programs' },
+    { to: '/courses', label: 'Courses' },
+    { to: '/analytics', label: 'Analytics' },
+    { to: '/account', label: 'Account Settings' },
+    { to: '/notifications', label: 'Notifications' }
   ]
 };
 
@@ -75,7 +95,7 @@ const Layout = () => {
         <header className="topbar">
           <div>
             <strong>{user?.name}</strong>
-            <div className="muted">{user?.role}</div>
+            <div className="muted">{roleLabels[user?.role] || user?.role}</div>
           </div>
           <button className="btn btn-secondary" onClick={handleLogout}>
             Logout

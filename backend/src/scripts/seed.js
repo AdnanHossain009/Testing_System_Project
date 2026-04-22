@@ -54,6 +54,13 @@ const run = async () => {
     department: department._id
   });
 
+  const accreditationOfficer = await User.create({
+    name: 'Nadia Karim',
+    email: 'accreditation@example.com',
+    password: 'Accred123!',
+    role: 'accreditation_officer'
+  });
+
   const head = await User.create({
     name: 'Dr. Department Head',
     email: 'head@example.com',
@@ -165,6 +172,7 @@ const run = async () => {
 
   console.log('Seed completed.');
   console.log('Admin login: admin@example.com / Admin123!');
+  console.log('Accreditation Officer login: accreditation@example.com / Accred123!');
   console.log('Head login: head@example.com / Head123!');
   console.log('Faculty login: faculty@example.com / Faculty123!');
   console.log('Student login: student1@example.com / Student123!');
