@@ -9,6 +9,7 @@ const menuByRole = {
     { to: '/departments', label: 'Departments' },
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
+    { to: '/account', label: 'Account Settings' },
     { to: '/notifications', label: 'Notifications' }
   ],
   faculty: [
@@ -21,6 +22,7 @@ const menuByRole = {
     { to: '/mappings', label: 'CLO-PLO Mapping' },
     { to: '/results', label: 'Results Entry' },
     { to: '/analytics', label: 'Analytics' },
+    { to: '/account', label: 'Account Settings' },
     { to: '/notifications', label: 'Notifications' }
   ],
   student: [
@@ -28,6 +30,7 @@ const menuByRole = {
     { to: '/courses', label: 'Courses' },
     { to: '/enrollments/history', label: 'Enrollment History' },
     { to: '/results', label: 'My Results' },
+    { to: '/account', label: 'Account Settings' },
     { to: '/notifications', label: 'Notifications' }
   ],
   head: [
@@ -36,6 +39,7 @@ const menuByRole = {
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
     { to: '/analytics', label: 'Analytics' },
+    { to: '/account', label: 'Account Settings' },
     { to: '/notifications', label: 'Notifications' }
   ]
 };

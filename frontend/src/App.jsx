@@ -29,6 +29,7 @@ import CourseRequestsPage from './pages/CourseRequestsPage';
 import EnrollmentHistoryPage from './pages/EnrollmentHistoryPage';
 import HeadCourseRequestsPage from './pages/HeadCourseRequestsPage';
 import CourseRequestReviewPage from './pages/CourseRequestReviewPage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 
 const App = () => {
   return (
@@ -54,6 +55,7 @@ const App = () => {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/account" element={<AccountSettingsPage />} />
         </Route>
       </Route>
 

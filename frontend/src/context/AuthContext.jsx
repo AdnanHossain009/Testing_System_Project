@@ -18,13 +18,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('obe_user', JSON.stringify(payload.user));
   };
 
+  const syncUser = (nextUser) => {
+    setUser(nextUser);
+    localStorage.setItem('obe_user', JSON.stringify(nextUser));
+  };
+
+  const refreshUser = async () => {
+    const response = await api.get('/auth/me');
+    syncUser(response.data.data.user);
+    return response.data.data.user;
+  };
+
   useEffect(() => {
     const verify = async () => {
       if (!token) return;
       try {
-        const response = await api.get('/auth/me');
-        setUser(response.data.data.user);
-        localStorage.setItem('obe_user', JSON.stringify(response.data.data.user));
+        await refreshUser();
       } catch (error) {
         logout();
       }
@@ -82,6 +91,8 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: Boolean(token),
       login,
       signup,
+      syncUser,
+      refreshUser,
       logout
     }),
     [token, user, loading]

@@ -17,6 +17,8 @@ const buildUserPayload = (user) => ({
   facultyId: user.facultyId
 });
 
+const getPopulatedUserById = (id) => User.findById(id).select('-password').populate('department program');
+
 const setupRegister = asyncHandler(async (req, res) => {
   const { name, email, password, role = 'admin' } = req.body;
 
@@ -149,7 +151,73 @@ const signup = asyncHandler(async (req, res) => {
 });
 
 const getMe = asyncHandler(async (req, res) => {
-  return success(res, { user: req.user }, 'Profile fetched.');
+  const user = await getPopulatedUserById(req.user._id);
+  return success(res, { user: buildUserPayload(user) }, 'Profile fetched.');
 });
 
-module.exports = { setupRegister, login, signup, getMe };
+const updateMe = asyncHandler(async (req, res) => {
+  const { email, currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found.');
+  }
+
+  const normalizedEmail = email?.trim().toLowerCase();
+  const hasEmailChange = normalizedEmail && normalizedEmail !== user.email;
+  const hasPasswordChange = Boolean(newPassword);
+
+  if (!hasEmailChange && !hasPasswordChange) {
+    res.status(400);
+    throw new Error('Provide a new email or password to update your account.');
+  }
+
+  if (hasEmailChange) {
+    const existingUser = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+    if (existingUser) {
+      res.status(400);
+      throw new Error('Another account already uses this email.');
+    }
+
+    user.email = normalizedEmail;
+  }
+
+  if (hasPasswordChange) {
+    if (!currentPassword) {
+      res.status(400);
+      throw new Error('Current password is required to set a new password.');
+    }
+
+    const passwordMatches = await user.matchPassword(currentPassword);
+    if (!passwordMatches) {
+      res.status(400);
+      throw new Error('Current password is incorrect.');
+    }
+
+    if (String(newPassword).length < 6) {
+      res.status(400);
+      throw new Error('New password must be at least 6 characters long.');
+    }
+
+    user.password = newPassword;
+  }
+
+  await user.save();
+  const updatedUser = await getPopulatedUserById(user._id);
+
+  await logAction({
+    actor: user._id,
+    action: 'UPDATE_OWN_ACCOUNT',
+    entityType: 'User',
+    entityId: user._id.toString(),
+    metadata: {
+      emailChanged: hasEmailChange,
+      passwordChanged: hasPasswordChange
+    }
+  });
+
+  return success(res, { user: buildUserPayload(updatedUser) }, 'Account updated successfully.');
+});
+
+module.exports = { setupRegister, login, signup, getMe, updateMe };
