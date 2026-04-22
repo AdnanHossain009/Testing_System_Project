@@ -15,7 +15,7 @@ const menuByRole = {
     { to: '/dashboard/faculty', label: 'Dashboard' },
     { to: '/faculty/courses', label: 'Assigned Courses' },
     { to: '/faculty/weak-students', label: 'Weak Students' },
-    { to: '/course-requests', label: 'Course Requests' },
+    { to: '/course-requests', label: 'Add Course' },
     { to: '/courses', label: 'Courses' },
     { to: '/assessments', label: 'Assessments' },
     { to: '/mappings', label: 'CLO-PLO Mapping' },
@@ -32,6 +32,7 @@ const menuByRole = {
   ],
   head: [
     { to: '/dashboard/head', label: 'Dashboard' },
+    { to: '/head/course-requests', label: 'Course Requests' },
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
     { to: '/analytics', label: 'Analytics' },

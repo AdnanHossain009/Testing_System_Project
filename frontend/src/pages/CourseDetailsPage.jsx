@@ -60,6 +60,15 @@ const CourseDetailsPage = () => {
         <StatCard label="Class Attained CLOs" value={analytics.classCloAttainment?.filter((item) => item.attained).length || 0} />
       </div>
 
+      {course.description ? (
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <h3>Course Description</h3>
+          <p className="muted" style={{ marginBottom: 0 }}>
+            {course.description}
+          </p>
+        </div>
+      ) : null}
+
       <div className="grid grid-2">
         <div className="card">
           <h3>Course CLOs</h3>

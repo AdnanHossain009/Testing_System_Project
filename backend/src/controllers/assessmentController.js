@@ -6,7 +6,22 @@ const { logAction } = require('../services/auditService');
 
 const listAssessments = asyncHandler(async (req, res) => {
   const filter = {};
-  if (req.query.courseId) filter.course = req.query.courseId;
+  let ownedCourseIds = [];
+
+  if (req.user.role === 'faculty') {
+    const ownedCourses = await Course.find({ faculty: req.user._id }).select('_id');
+    ownedCourseIds = ownedCourses.map((item) => String(item._id));
+    filter.course = { $in: ownedCourseIds };
+  }
+
+  if (req.query.courseId) {
+    if (req.user.role === 'faculty' && !ownedCourseIds.includes(String(req.query.courseId))) {
+      res.status(403);
+      throw new Error('You can only view assessments for your assigned courses.');
+    }
+
+    filter.course = req.query.courseId;
+  }
 
   const assessments = await Assessment.find(filter)
     .populate('course', 'name code')

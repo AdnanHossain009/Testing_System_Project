@@ -8,6 +8,10 @@ const listCourses = asyncHandler(async (req, res) => {
   const filter = req.user.role === 'admin' ? {} : { active: true };
 
   if (req.user.role !== 'admin') {
+    if (req.user.role === 'faculty' && req.query.scope === 'assigned') {
+      filter.faculty = req.user._id;
+    }
+
     if (req.user.department) {
       filter.department = req.user.department;
     }
@@ -31,7 +35,7 @@ const listCourses = asyncHandler(async (req, res) => {
 
   const courses = await Course.find(filter)
     .populate('department', 'name code')
-    .populate('program', 'name code')
+    .populate('program', 'name code plos')
     .populate('faculty', 'name email facultyId');
 
   const mappings = await CLOPLOMapping.find({ course: { $in: courses.map((course) => course._id) } }).lean();
@@ -47,6 +51,7 @@ const listCourses = asyncHandler(async (req, res) => {
         return (
           course.name.toLowerCase().includes(searchTerm) ||
           course.code.toLowerCase().includes(searchTerm) ||
+          (course.description || '').toLowerCase().includes(searchTerm) ||
           facultyText.includes(searchTerm)
         );
       })
@@ -61,7 +66,7 @@ const listCourses = asyncHandler(async (req, res) => {
 });
 
 const createCourse = asyncHandler(async (req, res) => {
-  const { name, code, credits, semester, department, program, faculty, clos = [] } = req.body;
+  const { name, code, description, credits, semester, department, program, faculty, clos = [] } = req.body;
 
   if (!name || !code || !department || !program) {
     res.status(400);
@@ -71,6 +76,7 @@ const createCourse = asyncHandler(async (req, res) => {
   const course = await Course.create({
     name,
     code,
+    description,
     credits,
     semester,
     department,

@@ -13,6 +13,7 @@ const courseSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    description: { type: String, trim: true, default: '' },
     credits: { type: Number, default: 3 },
     semester: { type: String, default: '8th' },
     department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },

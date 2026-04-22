@@ -18,7 +18,6 @@ const HeadDashboard = () => {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [busyRequestId, setBusyRequestId] = useState('');
 
   const loadDashboard = async () => {
     const [summaryResult, inboxResult] = await Promise.allSettled([
@@ -45,21 +44,6 @@ const HeadDashboard = () => {
     loadDashboard();
   }, []);
 
-  const handleRequestDecision = async (requestId, action) => {
-    setBusyRequestId(requestId);
-    setMessage('');
-
-    try {
-      await api.patch(`/course-requests/${requestId}/${action}`);
-      setMessage(action === 'approve' ? 'Course request approved.' : 'Course request rejected.');
-      await loadDashboard();
-    } catch (error) {
-      setMessage(error?.response?.data?.message || 'Unable to update request.');
-    } finally {
-      setBusyRequestId('');
-    }
-  };
-
   if (loading) return <Loading text="Loading department head dashboard..." />;
   if (!data) return <div className="error-box">{message || 'Unable to load head dashboard.'}</div>;
 
@@ -79,6 +63,12 @@ const HeadDashboard = () => {
         <StatCard label="Courses" value={data.totalCourses} />
         <StatCard label="Stored Results" value={data.totalResults} />
         <StatCard label="Avg Department Fuzzy" value={data.averageDepartmentFuzzy} />
+      </div>
+
+      <div className="inline-actions" style={{ marginBottom: '1rem' }}>
+        <Link className="btn btn-secondary" to="/head/course-requests">
+          Open Course Requests
+        </Link>
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>
@@ -112,22 +102,9 @@ const HeadDashboard = () => {
                   <td>{summarizePlos(item.proposedMappings)}</td>
                   <td>{formatDate(item.createdAt)}</td>
                   <td>
-                    <div className="inline-actions">
-                      <button
-                        className="btn"
-                        onClick={() => handleRequestDecision(item._id, 'approve')}
-                        disabled={busyRequestId === item._id}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => handleRequestDecision(item._id, 'reject')}
-                        disabled={busyRequestId === item._id}
-                      >
-                        Reject
-                      </button>
-                    </div>
+                    <Link className="btn btn-secondary" to={`/head/course-requests/${item._id}`}>
+                      Review
+                    </Link>
                   </td>
                 </tr>
               ))}

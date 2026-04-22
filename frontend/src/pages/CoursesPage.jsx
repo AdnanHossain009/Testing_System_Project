@@ -311,6 +311,7 @@ const CoursesPage = () => {
                   <td>
                     <strong>{item.code}</strong>
                     <div className="muted">{item.name}</div>
+                    {item.description ? <div className="muted">{item.description}</div> : null}
                   </td>
                   <td>
                     <div>{item.faculty?.name || 'Not Assigned'}</div>

@@ -27,6 +27,8 @@ import CourseDetailsPage from './pages/CourseDetailsPage';
 import ProgramDetailsPage from './pages/ProgramDetailsPage';
 import CourseRequestsPage from './pages/CourseRequestsPage';
 import EnrollmentHistoryPage from './pages/EnrollmentHistoryPage';
+import HeadCourseRequestsPage from './pages/HeadCourseRequestsPage';
+import CourseRequestReviewPage from './pages/CourseRequestReviewPage';
 
 const App = () => {
   return (
@@ -90,6 +92,8 @@ const App = () => {
       <Route element={<ProtectedRoute allowedRoles={['head']} />}>
         <Route element={<Layout />}>
           <Route path="/dashboard/head" element={<HeadDashboard />} />
+          <Route path="/head/course-requests" element={<HeadCourseRequestsPage />} />
+          <Route path="/head/course-requests/:requestId" element={<CourseRequestReviewPage />} />
         </Route>
       </Route>
 

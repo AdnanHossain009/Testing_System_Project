@@ -14,7 +14,7 @@ const AssignedCoursesPage = () => {
   useEffect(() => {
     const run = async () => {
       const [courseResponse, summaryResponse, assessmentResponse] = await Promise.all([
-        api.get('/courses'),
+        api.get('/courses', { params: { scope: 'assigned' } }),
         api.get('/analytics/faculty-summary'),
         api.get('/assessments')
       ]);

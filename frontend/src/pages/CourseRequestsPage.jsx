@@ -1,55 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import { useAuth } from '../context/AuthContext';
+import {
+  assessmentRowToPayload,
+  assessmentToFormRow,
+  cloneProgramPlos,
+  createAssessmentRow,
+  createCloRow,
+  createMappingRow,
+  createPloRow,
+  formatFileSize,
+  getStatusClassName
+} from '../utils/courseRequestHelpers';
 
-const initialForm = {
+const buildInitialForm = (programId = '') => ({
   name: '',
   code: '',
+  description: '',
   credits: 3,
   semester: '8th',
-  program: '',
-  closText: 'CLO1|Explain the course topic|C2',
-  mappingsText: 'CLO1|PLO1|1',
-  note: ''
-};
-
-const parseClos = (text) =>
-  text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [code, description, bloomLevel] = line.split('|');
-      return {
-        code: code?.trim(),
-        description: description?.trim(),
-        bloomLevel: bloomLevel?.trim() || 'C3'
-      };
-    })
-    .filter((item) => item.code && item.description);
-
-const parseMappings = (text) =>
-  text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [cloCode, ploCode, weight] = line.split('|');
-      return {
-        cloCode: cloCode?.trim(),
-        ploCode: ploCode?.trim(),
-        weight: Number(weight)
-      };
-    })
-    .filter((item) => item.cloCode && item.ploCode && Number.isFinite(item.weight));
-
-const summarizeClos = (clos = []) => (clos.length ? clos.map((item) => item.code).join(', ') : 'N/A');
-
-const summarizePlos = (mappings = []) => {
-  const ploCodes = Array.from(new Set((mappings || []).map((item) => item.ploCode)));
-  return ploCodes.length ? ploCodes.join(', ') : 'N/A';
-};
+  program: programId,
+  note: '',
+  uploadedPdf: null,
+  extraction: {
+    status: 'not_started',
+    warnings: [],
+    textPreview: ''
+  },
+  clos: [createCloRow()],
+  plos: [],
+  mappings: [],
+  assessments: []
+});
 
 const CourseRequestsPage = () => {
   const { user } = useAuth();
@@ -57,10 +40,19 @@ const CourseRequestsPage = () => {
 
   const [programs, setPrograms] = useState([]);
   const [requests, setRequests] = useState([]);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(buildInitialForm());
+  const [pdfFile, setPdfFile] = useState(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [extracting, setExtracting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [feedbackType, setFeedbackType] = useState('success');
+
+  const selectedProgram = useMemo(
+    () => programs.find((item) => item._id === form.program) || programs[0] || null,
+    [form.program, programs]
+  );
 
   const loadPage = async () => {
     const [programResponse, requestResponse] = await Promise.all([
@@ -69,11 +61,14 @@ const CourseRequestsPage = () => {
     ]);
 
     const programList = programResponse.data.data.programs || [];
+    const requestList = requestResponse.data.data.requests || [];
+    const defaultProgramId = programList[0]?._id || '';
+
     setPrograms(programList);
-    setRequests(requestResponse.data.data.requests || []);
+    setRequests(requestList);
     setForm((prev) => ({
       ...prev,
-      program: prev.program || programList[0]?._id || ''
+      program: prev.program || defaultProgramId
     }));
   };
 
@@ -82,7 +77,8 @@ const CourseRequestsPage = () => {
       try {
         await loadPage();
       } catch (error) {
-        setFeedback(error?.response?.data?.message || 'Failed to load course requests.');
+        setFeedback(error?.response?.data?.message || 'Failed to load add course workflow.');
+        setFeedbackType('error');
       } finally {
         setLoading(false);
       }
@@ -91,133 +87,627 @@ const CourseRequestsPage = () => {
     run();
   }, [departmentId]);
 
-  const submitHandler = async (event) => {
+  const setMessage = (message, type = 'success') => {
+    setFeedback(message);
+    setFeedbackType(type);
+  };
+
+  const updateListRow = (key, index, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [key]: prev[key].map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item))
+    }));
+  };
+
+  const addListRow = (key, factory) => {
+    setForm((prev) => ({
+      ...prev,
+      [key]: [...prev[key], factory()]
+    }));
+  };
+
+  const removeListRow = (key, index, fallbackFactory) => {
+    setForm((prev) => {
+      const nextRows = prev[key].filter((_, itemIndex) => itemIndex !== index);
+      return {
+        ...prev,
+        [key]: nextRows.length ? nextRows : fallbackFactory ? [fallbackFactory()] : []
+      };
+    });
+  };
+
+  const resetForm = (programId = form.program) => {
+    setForm(buildInitialForm(programId));
+    setPdfFile(null);
+    setFileInputKey((prev) => prev + 1);
+  };
+
+  const handleExtract = async () => {
+    if (!pdfFile) {
+      setMessage('Please upload a course or syllabus PDF first.', 'error');
+      return;
+    }
+
+    setExtracting(true);
+    setMessage('');
+
+    try {
+      const payload = new FormData();
+      payload.append('pdf', pdfFile);
+
+      const response = await api.post('/course-requests/extract-pdf', payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const data = response.data.data;
+      const extractedData = data.extractedData || {};
+
+      setForm((prev) => ({
+        ...prev,
+        uploadedPdf: data.uploadedPdf || null,
+        extraction: data.extraction || prev.extraction,
+        clos: extractedData.clos?.length ? extractedData.clos : prev.clos,
+        plos: extractedData.plos?.length ? extractedData.plos : prev.plos,
+        mappings: extractedData.mappings?.length ? extractedData.mappings : prev.mappings,
+        assessments: extractedData.assessments?.length
+          ? extractedData.assessments.map((item) => assessmentToFormRow(item))
+          : prev.assessments
+      }));
+
+      setMessage(response.data.message || 'PDF extraction completed.', data.extraction?.status === 'failed' ? 'error' : 'success');
+    } catch (error) {
+      setMessage(error?.response?.data?.message || 'Automatic extraction failed. Please enter data manually.', 'error');
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
-    setFeedback('');
+    setMessage('');
 
     try {
       await api.post('/course-requests/faculty-course', {
         name: form.name,
         code: form.code,
+        description: form.description,
         credits: Number(form.credits),
         semester: form.semester,
         department: departmentId,
         program: form.program,
-        clos: parseClos(form.closText),
-        mappings: parseMappings(form.mappingsText),
+        clos: form.clos,
+        plos: form.plos,
+        mappings: form.mappings.map((item) => ({
+          ...item,
+          weight: Number(item.weight)
+        })),
+        assessments: form.assessments.map((item) => assessmentRowToPayload(item)),
+        uploadedPdf: form.uploadedPdf,
+        extraction: form.extraction,
         note: form.note
       });
 
-      setFeedback('Course request submitted to the department head.');
-      setForm(initialForm);
+      setMessage('Course request submitted to the department head for review.');
+      const nextProgramId = form.program;
+      resetForm(nextProgramId);
       await loadPage();
     } catch (error) {
-      setFeedback(error?.response?.data?.message || 'Failed to submit course request.');
+      setMessage(error?.response?.data?.message || 'Failed to submit course request.', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <Loading text="Loading course requests..." />;
+  if (loading) return <Loading text="Loading add course workflow..." />;
 
   return (
     <div>
       <div className="page-header">
-        <h1>Course Requests</h1>
+        <h1>Add Course</h1>
         <p className="muted">
-          Request a new course from the department head with full CLO and PLO mapping details.
+          Upload a course PDF, review extracted CLOs, PLOs, mappings, and assessments, then send the course request to your department head.
         </p>
       </div>
 
-      {feedback ? <div className={feedback.includes('Failed') ? 'error-box' : 'success-box'}>{feedback}</div> : null}
+      {feedback ? <div className={feedbackType === 'error' ? 'error-box' : 'success-box'}>{feedback}</div> : null}
 
-      <div className="grid grid-2">
-        <form className="card" onSubmit={submitHandler}>
-          <h3>Request Course Approval</h3>
-          <p className="muted" style={{ marginTop: 0 }}>
-            Department: {user?.department?.name || user?.department?.code || 'Your department'}
-          </p>
+      <div className="workflow-steps">
+        <span>1. Upload PDF</span>
+        <span>2. Extract outcomes</span>
+        <span>3. Review and edit</span>
+        <span>4. Submit for approval</span>
+      </div>
 
-          <label>Course Name</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-
-          <label>Course Code</label>
-          <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-
-          <div className="grid grid-2">
-            <div>
-              <label>Credits</label>
-              <input
-                type="number"
-                value={form.credits}
-                onChange={(e) => setForm({ ...form, credits: e.target.value })}
-              />
+      <div className="grid grid-2 align-start">
+        <form className="stack-lg" onSubmit={handleSubmit}>
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>Course Basics</h3>
+                <p className="muted">Provide the official course identity and academic placement.</p>
+              </div>
+              <span className="status-badge badge-muted">
+                Department: {user?.department?.code || user?.department?.name || 'Assigned department'}
+              </span>
             </div>
-            <div>
-              <label>Semester</label>
-              <input value={form.semester} onChange={(e) => setForm({ ...form, semester: e.target.value })} />
+
+            <div className="grid grid-2">
+              <div>
+                <label>Course Title</label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div>
+                <label>Course Code</label>
+                <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} />
+              </div>
+              <div>
+                <label>Credits</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.credits}
+                  onChange={(e) => setForm({ ...form, credits: e.target.value })}
+                />
+              </div>
+              <div>
+                <label>Semester</label>
+                <input value={form.semester} onChange={(e) => setForm({ ...form, semester: e.target.value })} />
+              </div>
             </div>
-          </div>
 
-          <label>Program</label>
-          <select value={form.program} onChange={(e) => setForm({ ...form, program: e.target.value })}>
-            {programs.map((item) => (
-              <option value={item._id} key={item._id}>
-                {item.code} - {item.name}
-              </option>
-            ))}
-          </select>
+            <label>Program</label>
+            <select value={form.program} onChange={(e) => setForm({ ...form, program: e.target.value })}>
+              {programs.map((item) => (
+                <option value={item._id} key={item._id}>
+                  {item.code} - {item.name}
+                </option>
+              ))}
+            </select>
 
-          <label>CLOs one per line, format: code|description|bloom</label>
-          <textarea rows="5" value={form.closText} onChange={(e) => setForm({ ...form, closText: e.target.value })} />
+            <label>Description</label>
+            <textarea
+              rows="3"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Optional course summary or syllabus note."
+            />
+          </section>
 
-          <label>CLO-PLO mappings one per line, format: clo|plo|weight</label>
-          <textarea
-            rows="5"
-            value={form.mappingsText}
-            onChange={(e) => setForm({ ...form, mappingsText: e.target.value })}
-          />
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>Course PDF</h3>
+                <p className="muted">Upload the syllabus PDF, then run the rule-based extraction.</p>
+              </div>
+              <span className={`status-badge ${getStatusClassName(form.extraction?.status)}`}>
+                {form.extraction?.status || 'not_started'}
+              </span>
+            </div>
 
-          <label>Note</label>
-          <textarea rows="3" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
+            <div className="upload-box">
+              <label>Upload PDF</label>
+              <input key={fileInputKey} type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} />
+              <div className="inline-actions">
+                <button className="btn" type="button" onClick={handleExtract} disabled={extracting}>
+                  {extracting ? 'Extracting...' : 'Extract Outcomes'}
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={() => resetForm(form.program)}>
+                  Clear Draft
+                </button>
+              </div>
+            </div>
 
-          <button className="btn" disabled={submitting}>
-            {submitting ? 'Submitting...' : 'Send Request'}
-          </button>
-        </form>
+            {form.uploadedPdf ? (
+              <div className="info-strip">
+                <strong>{form.uploadedPdf.originalName}</strong>
+                <span>{formatFileSize(form.uploadedPdf.size)}</span>
+                <span>{form.uploadedPdf.pageCount || 0} pages</span>
+              </div>
+            ) : null}
 
-        <div className="card">
-          <h3>My Course Requests</h3>
-          {requests.length === 0 ? (
-            <p className="muted">No course requests submitted yet.</p>
-          ) : (
+            {form.extraction?.warnings?.length ? (
+              <div className="soft-warning">
+                <strong>Extraction Notes</strong>
+                <ul className="simple-list">
+                  {form.extraction.warnings.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {form.extraction?.textPreview ? (
+              <>
+                <label>Text Preview</label>
+                <textarea rows="6" value={form.extraction.textPreview} readOnly />
+              </>
+            ) : null}
+          </section>
+
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>CLOs</h3>
+                <p className="muted">Edit codes, descriptions, and Bloom levels before submission.</p>
+              </div>
+              <button className="btn btn-secondary" type="button" onClick={() => addListRow('clos', createCloRow)}>
+                Add CLO
+              </button>
+            </div>
+
             <table className="table">
               <thead>
                 <tr>
-                  <th>Course</th>
-                  <th>CLOs</th>
-                  <th>PLOs</th>
-                  <th>Status</th>
-                  <th>Reviewed By</th>
+                  <th>Code</th>
+                  <th>Description</th>
+                  <th>Bloom</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {requests.map((item) => (
-                  <tr key={item._id}>
+                {form.clos.map((item, index) => (
+                  <tr key={`clo-${index}`}>
                     <td>
-                      <strong>{item.proposedCourse?.code}</strong>
-                      <div className="muted">{item.proposedCourse?.name}</div>
+                      <input value={item.code} onChange={(e) => updateListRow('clos', index, 'code', e.target.value)} />
                     </td>
-                    <td>{summarizeClos(item.proposedCourse?.clos || [])}</td>
-                    <td>{summarizePlos(item.proposedMappings || [])}</td>
-                    <td>{item.status}</td>
-                    <td>{item.reviewedBy?.name || 'Pending'}</td>
+                    <td>
+                      <input
+                        value={item.description}
+                        onChange={(e) => updateListRow('clos', index, 'description', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={item.bloomLevel}
+                        onChange={(e) => updateListRow('clos', index, 'bloomLevel', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-secondary btn-small"
+                        type="button"
+                        onClick={() => removeListRow('clos', index, createCloRow)}
+                      >
+                        Remove
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
+          </section>
+
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>PLOs</h3>
+                <p className="muted">Use extracted PLOs or load the current program catalog as a starting point.</p>
+              </div>
+              <div className="inline-actions">
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, plos: cloneProgramPlos(selectedProgram) }))}
+                >
+                  Load Program PLOs
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={() => addListRow('plos', createPloRow)}>
+                  Add PLO
+                </button>
+              </div>
+            </div>
+
+            {form.plos.length === 0 ? <p className="muted">No PLO rows loaded yet. You can still submit if mappings use existing program PLOs.</p> : null}
+
+            {form.plos.length ? (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {form.plos.map((item, index) => (
+                    <tr key={`plo-${index}`}>
+                      <td>
+                        <input value={item.code} onChange={(e) => updateListRow('plos', index, 'code', e.target.value)} />
+                      </td>
+                      <td>
+                        <input
+                          value={item.description}
+                          onChange={(e) => updateListRow('plos', index, 'description', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-secondary btn-small"
+                          type="button"
+                          onClick={() => removeListRow('plos', index)}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </section>
+
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>CLO-PLO Mapping</h3>
+                <p className="muted">Keep weights between 0 and 1 so they match the current mapping schema.</p>
+              </div>
+              <button className="btn btn-secondary" type="button" onClick={() => addListRow('mappings', createMappingRow)}>
+                Add Mapping
+              </button>
+            </div>
+
+            {form.mappings.length === 0 ? <p className="muted">No mapping rows yet. Add them manually if extraction does not find any.</p> : null}
+
+            {form.mappings.length ? (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>CLO Code</th>
+                    <th>PLO Code</th>
+                    <th>Weight</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {form.mappings.map((item, index) => (
+                    <tr key={`mapping-${index}`}>
+                      <td>
+                        <input
+                          value={item.cloCode}
+                          onChange={(e) => updateListRow('mappings', index, 'cloCode', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          value={item.ploCode}
+                          onChange={(e) => updateListRow('mappings', index, 'ploCode', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={item.weight}
+                          onChange={(e) => updateListRow('mappings', index, 'weight', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-secondary btn-small"
+                          type="button"
+                          onClick={() => removeListRow('mappings', index)}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </section>
+
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>Assessments</h3>
+                <p className="muted">Add the assessment structure that should become active after approval.</p>
+              </div>
+              <button className="btn btn-secondary" type="button" onClick={() => addListRow('assessments', createAssessmentRow)}>
+                Add Assessment
+              </button>
+            </div>
+
+            {form.assessments.length === 0 ? <p className="muted">No assessment rows detected yet. You can add them manually.</p> : null}
+
+            <div className="stack">
+              {form.assessments.map((item, index) => (
+                <div className="subcard" key={`assessment-${index}`}>
+                  <div className="grid grid-2">
+                    <div>
+                      <label>Title</label>
+                      <input value={item.title} onChange={(e) => updateListRow('assessments', index, 'title', e.target.value)} />
+                    </div>
+                    <div>
+                      <label>Type</label>
+                      <select value={item.type} onChange={(e) => updateListRow('assessments', index, 'type', e.target.value)}>
+                        <option value="quiz">Quiz</option>
+                        <option value="assignment">Assignment</option>
+                        <option value="mid">Mid</option>
+                        <option value="final">Final</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label>Weightage (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={item.weightage}
+                        onChange={(e) => updateListRow('assessments', index, 'weightage', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label>Total Marks</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={item.totalMarks}
+                        onChange={(e) => updateListRow('assessments', index, 'totalMarks', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <label>CLO Codes</label>
+                  <input
+                    value={item.cloCodesText}
+                    onChange={(e) => updateListRow('assessments', index, 'cloCodesText', e.target.value)}
+                    placeholder="CLO1, CLO2"
+                  />
+
+                  <label>CLO Distribution</label>
+                  <textarea
+                    rows="3"
+                    value={item.cloDistributionText}
+                    onChange={(e) => updateListRow('assessments', index, 'cloDistributionText', e.target.value)}
+                    placeholder="CLO1:10&#10;CLO2:15"
+                  />
+
+                  <label>Notes</label>
+                  <textarea
+                    rows="2"
+                    value={item.note}
+                    onChange={(e) => updateListRow('assessments', index, 'note', e.target.value)}
+                    placeholder="Optional extracted note or assessment remark."
+                  />
+
+                  <button
+                    className="btn btn-secondary btn-small"
+                    type="button"
+                    onClick={() => removeListRow('assessments', index)}
+                  >
+                    Remove Assessment
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="card">
+            <h3>Submission Note</h3>
+            <label>Message to Department Head</label>
+            <textarea
+              rows="3"
+              value={form.note}
+              onChange={(e) => setForm({ ...form, note: e.target.value })}
+              placeholder="Optional note about the request or extraction quality."
+            />
+
+            <div className="inline-actions">
+              <button className="btn" disabled={submitting}>
+                {submitting ? 'Submitting...' : 'Submit for Approval'}
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={() => resetForm(form.program)}>
+                Reset Form
+              </button>
+            </div>
+          </section>
+        </form>
+
+        <div className="stack-lg">
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>Program PLO Reference</h3>
+                <p className="muted">Use the active program outcomes to validate mapping codes.</p>
+              </div>
+              <span className="status-badge badge-muted">{selectedProgram?.code || 'No program selected'}</span>
+            </div>
+
+            {selectedProgram?.plos?.length ? (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>PLO</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedProgram.plos.map((item) => (
+                    <tr key={item.code}>
+                      <td>{item.code}</td>
+                      <td>{item.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="muted">This program does not have saved PLOs yet.</p>
+            )}
+          </section>
+
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <h3>My Course Requests</h3>
+                <p className="muted">Track pending, approved, and rejected submissions.</p>
+              </div>
+              <span className="status-badge badge-muted">{requests.length} total</span>
+            </div>
+
+            {requests.length === 0 ? (
+              <p className="muted">No course requests submitted yet.</p>
+            ) : (
+              <div className="stack">
+                {requests.map((item) => (
+                  <div className="subcard" key={item._id}>
+                    <div className="section-heading">
+                      <div>
+                        <strong>{item.proposedCourse?.code}</strong>
+                        <div className="muted">{item.proposedCourse?.name}</div>
+                      </div>
+                      <span className={`status-badge ${getStatusClassName(item.status)}`}>{item.status}</span>
+                    </div>
+
+                    <div className="request-meta-grid">
+                      <span>
+                        <strong>CLOs:</strong> {item.proposedCourse?.clos?.length || 0}
+                      </span>
+                      <span>
+                        <strong>PLOs:</strong> {item.proposedPlos?.length || 0}
+                      </span>
+                      <span>
+                        <strong>Mappings:</strong> {item.proposedMappings?.length || 0}
+                      </span>
+                      <span>
+                        <strong>Assessments:</strong> {item.proposedAssessments?.length || 0}
+                      </span>
+                    </div>
+
+                    <div className="request-meta-grid">
+                      <span>
+                        <strong>Extraction:</strong>{' '}
+                        <span className={`status-badge ${getStatusClassName(item.extraction?.status)}`}>
+                          {item.extraction?.status || 'not_started'}
+                        </span>
+                      </span>
+                      <span>
+                        <strong>Submitted:</strong> {new Date(item.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {item.uploadedPdf ? (
+                      <p className="muted">
+                        PDF: {item.uploadedPdf.originalName} ({formatFileSize(item.uploadedPdf.size)})
+                      </p>
+                    ) : null}
+
+                    {item.reviewNote ? (
+                      <div className="soft-warning">
+                        <strong>Review Note</strong>
+                        <div>{item.reviewNote}</div>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>

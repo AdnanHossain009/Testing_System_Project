@@ -92,7 +92,7 @@ const FacultyDashboard = () => {
           View Weak Students
         </Link>
         <Link className="btn btn-secondary" to="/course-requests">
-          Request New Course
+          Add Course
         </Link>
       </div>
 

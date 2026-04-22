@@ -59,36 +59,56 @@ const AssessmentsPage = () => {
   const [assessments, setAssessments] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(true);
+  const [feedback, setFeedback] = useState('');
 
   const loadAll = async () => {
     const [courseResponse, assessmentResponse] = await Promise.all([
-      api.get('/courses'),
+      api.get('/courses', { params: { scope: 'assigned' } }),
       api.get('/assessments')
     ]);
 
-    const courseList = courseResponse.data.data.courses;
+    const courseList = courseResponse.data.data.courses || [];
     setCourses(courseList);
-    setAssessments(assessmentResponse.data.data.assessments);
+    setAssessments(assessmentResponse.data.data.assessments || []);
     setForm((prev) => ({ ...prev, course: prev.course || courseList[0]?._id || '' }));
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadAll();
+    const run = async () => {
+      try {
+        await loadAll();
+      } catch (error) {
+        setFeedback(error?.response?.data?.message || 'Failed to load assessments.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, []);
 
   const submitHandler = async (event) => {
     event.preventDefault();
-    await api.post('/assessments', {
-      ...form,
-      totalMarks: Number(form.totalMarks),
-      weightage: Number(form.weightage),
-      cloCodes: form.cloCodesText.split(',').map((item) => item.trim()),
-      cloDistribution: parseCloDistribution(form.cloDistributionText),
-      rubricCriteria: parseRubrics(form.rubricText)
-    });
-    setForm(initialForm);
-    loadAll();
+    setFeedback('');
+
+    try {
+      await api.post('/assessments', {
+        ...form,
+        totalMarks: Number(form.totalMarks),
+        weightage: Number(form.weightage),
+        cloCodes: form.cloCodesText.split(',').map((item) => item.trim()).filter(Boolean),
+        cloDistribution: parseCloDistribution(form.cloDistributionText),
+        rubricCriteria: parseRubrics(form.rubricText)
+      });
+      setForm((prev) => ({
+        ...initialForm,
+        course: prev.course
+      }));
+      setFeedback('Assessment saved successfully.');
+      await loadAll();
+    } catch (error) {
+      setFeedback(error?.response?.data?.message || 'Failed to save assessment.');
+    }
   };
 
   if (loading) return <Loading text="Loading assessments..." />;
@@ -102,11 +122,14 @@ const AssessmentsPage = () => {
         </p>
       </div>
 
+      {feedback ? <div className={feedback.toLowerCase().includes('failed') ? 'error-box' : 'success-box'}>{feedback}</div> : null}
+
       <div className="grid grid-2">
         <form className="card" onSubmit={submitHandler}>
           <h3>Create Assessment</h3>
+          {courses.length === 0 ? <p className="muted">No approved assigned courses available yet. Approve a course request first.</p> : null}
           <label>Course</label>
-          <select value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })}>
+          <select value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} disabled={!courses.length}>
             {courses.map((item) => (
               <option value={item._id} key={item._id}>
                 {item.code}
@@ -158,7 +181,9 @@ const AssessmentsPage = () => {
             onChange={(e) => setForm({ ...form, weightage: e.target.value })}
           />
 
-          <button className="btn">Save Assessment</button>
+          <button className="btn" disabled={!courses.length}>
+            Save Assessment
+          </button>
         </form>
 
         <div className="card">
