@@ -14,6 +14,7 @@ const menuByRole = {
     { to: '/dashboard/admin', label: 'Dashboard' },
     { to: '/users', label: 'Users' },
     { to: '/high-risk-students', label: 'High Risk Students' },
+    { to: '/accreditation/improvement-plans', label: 'Improvement Plans' },
     { to: '/departments', label: 'Departments' },
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
@@ -30,6 +31,7 @@ const menuByRole = {
     { to: '/mappings', label: 'CLO-PLO Mapping' },
     { to: '/results', label: 'Results Entry' },
     { to: '/analytics', label: 'Analytics' },
+    { to: '/accreditation/improvement-plans', label: 'Improvement Plans' },
     { to: '/account', label: 'Account Settings' },
     { to: '/notifications', label: 'Notifications' }
   ],
@@ -47,6 +49,7 @@ const menuByRole = {
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
     { to: '/analytics', label: 'Analytics' },
+    { to: '/accreditation/improvement-plans', label: 'Improvement Plans' },
     { to: '/account', label: 'Account Settings' },
     { to: '/notifications', label: 'Notifications' }
   ],

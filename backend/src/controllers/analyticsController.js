@@ -11,6 +11,7 @@ const {
   buildInstitutionAnalytics
 } = require('../services/analyticsService');
 const { buildStudentAnalytics } = require('../services/studentAnalyticsService');
+const { buildPlanDashboardStats } = require('../services/improvementPlanningService');
 
 const adminSummary = asyncHandler(async (req, res) => {
   const [userCount, courseCount, departmentCount, highRiskCount, roleStats] = await Promise.all([
@@ -146,9 +147,28 @@ const headSummary = asyncHandler(async (req, res) => {
 });
 
 const accreditationSummary = asyncHandler(async (req, res) => {
-  const summary = await buildInstitutionAnalytics();
+  const [summary, planStats] = await Promise.all([
+    buildInstitutionAnalytics(),
+    buildPlanDashboardStats()
+  ]);
 
-  return success(res, summary, 'Accreditation analytics fetched.');
+  return success(
+    res,
+    {
+      ...summary,
+      planSummary: {
+        openPlans: planStats.openPlans,
+        inProgressPlans: planStats.inProgressPlans,
+        overduePlans: planStats.overduePlans,
+        completedPlans: planStats.completedPlans
+      },
+      totalPendingActionItems: planStats.openPlans + planStats.inProgressPlans,
+      belowTargetOutcomes: planStats.belowTargetOutcomes,
+      highlightedOutcomes: planStats.highlightedOutcomes,
+      recentPlans: planStats.recentPlans
+    },
+    'Accreditation analytics fetched.'
+  );
 });
 
 const courseAnalytics = asyncHandler(async (req, res) => {

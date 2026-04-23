@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
-
-const formatDate = (value) => (value ? new Date(value).toLocaleString() : 'N/A');
+import {
+  buildOutcomeScopeText,
+  buildScopeText,
+  formatDisplayDate,
+  getImprovementStatusClassName
+} from '../utils/improvementPlanHelpers';
 
 const AccreditationDashboard = () => {
   const [data, setData] = useState(null);
@@ -42,7 +46,17 @@ const AccreditationDashboard = () => {
         <StatCard label="Pending Action Items" value={data.totalPendingActionItems} />
       </div>
 
+      <div className="grid grid-4">
+        <StatCard label="Below-Target Outcomes" value={data.belowTargetOutcomes || 0} />
+        <StatCard label="Open Plans" value={data.planSummary?.openPlans || 0} />
+        <StatCard label="Overdue Plans" value={data.planSummary?.overduePlans || 0} />
+        <StatCard label="Completed Plans" value={data.planSummary?.completedPlans || 0} />
+      </div>
+
       <div className="inline-actions" style={{ marginBottom: '1rem' }}>
+        <Link className="btn" to="/accreditation/improvement-plans">
+          Open Improvement Plans
+        </Link>
         <Link className="btn btn-secondary" to="/programs">
           Open Programs
         </Link>
@@ -58,7 +72,7 @@ const AccreditationDashboard = () => {
         <div className="card">
           <h3>Accreditation Modules</h3>
           <p className="muted">
-            The institutional role foundation is ready. These modules are scaffolded and can now grow into full accreditation workflows without disturbing faculty, student, or head experiences.
+            Improvement planning is now connected to benchmark targets and below-target outcome detection, while the remaining accreditation modules stay scaffolded for later expansion.
           </p>
           <div className="inline-actions">
             <Link className="btn btn-secondary" to="/accreditation/improvement-plans">
@@ -147,7 +161,7 @@ const AccreditationDashboard = () => {
                     </td>
                     <td>{item.averageFuzzy}</td>
                     <td>{item.weakClos + item.weakPlos}</td>
-                    <td>{formatDate(item.lastEvaluatedAt)}</td>
+                    <td>{formatDisplayDate(item.lastEvaluatedAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -156,6 +170,80 @@ const AccreditationDashboard = () => {
             <p className="muted">No analytics snapshots are available yet.</p>
           )}
         </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <h3>Highlighted Below-Target Outcomes</h3>
+        {data.highlightedOutcomes?.length ? (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Outcome</th>
+                <th>Scope</th>
+                <th>Current</th>
+                <th>Target</th>
+                <th>Gap</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.highlightedOutcomes.map((item) => (
+                <tr key={`${item.outcomeType}-${item.outcomeCode}-${item.courseId || item.programId || item.departmentId}`}>
+                  <td>
+                    <strong>{item.outcomeType}</strong>
+                    <div className="muted">{item.outcomeCode}</div>
+                  </td>
+                  <td>{buildOutcomeScopeText(item)}</td>
+                  <td>{item.currentAttainment}</td>
+                  <td>{item.targetAttainment}</td>
+                  <td>{item.gap}</td>
+                  <td>
+                    <Link className="btn btn-secondary" to="/accreditation/improvement-plans">
+                      Plan Action
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="muted">No below-target outcomes were detected against the current benchmarks.</p>
+        )}
+      </div>
+
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <h3>Recent Improvement Plans</h3>
+        {data.recentPlans?.length ? (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Outcome</th>
+                <th>Scope</th>
+                <th>Assigned To</th>
+                <th>Due</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.recentPlans.map((item) => (
+                <tr key={item._id}>
+                  <td>
+                    <strong>{item.outcomeType}</strong>
+                    <div className="muted">{item.outcomeCode}</div>
+                  </td>
+                  <td>{buildScopeText(item)}</td>
+                  <td>{item.assignedTo?.name || 'Unassigned'}</td>
+                  <td>{formatDisplayDate(item.dueDate)}</td>
+                  <td>
+                    <span className={`status-badge ${getImprovementStatusClassName(item.status)}`}>{item.status.replace('_', ' ')}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="muted">No improvement plans have been created yet.</p>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>

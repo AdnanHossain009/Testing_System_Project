@@ -32,6 +32,9 @@ import HeadCourseRequestsPage from './pages/HeadCourseRequestsPage';
 import CourseRequestReviewPage from './pages/CourseRequestReviewPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 import AccreditationModulePlaceholderPage from './pages/AccreditationModulePlaceholderPage';
+import ImprovementPlansPage from './pages/ImprovementPlansPage';
+import ImprovementPlanFormPage from './pages/ImprovementPlanFormPage';
+import ImprovementPlanDetailsPage from './pages/ImprovementPlanDetailsPage';
 
 const App = () => {
   return (
@@ -105,15 +108,6 @@ const App = () => {
         <Route element={<Layout />}>
           <Route path="/dashboard/accreditation" element={<AccreditationDashboard />} />
           <Route
-            path="/accreditation/improvement-plans"
-            element={
-              <AccreditationModulePlaceholderPage
-                title="Improvement Plans"
-                description="Track institution-level corrective actions, monitor weak outcomes, and prepare formal response plans for accreditation cycles."
-              />
-            }
-          />
-          <Route
             path="/accreditation/evidence-manager"
             element={
               <AccreditationModulePlaceholderPage
@@ -140,6 +134,19 @@ const App = () => {
               />
             }
           />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['admin', 'accreditation_officer', 'head', 'faculty']} />}>
+        <Route element={<Layout />}>
+          <Route path="/accreditation/improvement-plans" element={<ImprovementPlansPage />} />
+          <Route path="/accreditation/improvement-plans/:planId" element={<ImprovementPlanDetailsPage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['admin', 'accreditation_officer']} />}>
+        <Route element={<Layout />}>
+          <Route path="/accreditation/improvement-plans/new" element={<ImprovementPlanFormPage />} />
         </Route>
       </Route>
 

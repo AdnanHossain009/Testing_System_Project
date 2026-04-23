@@ -11,6 +11,8 @@ const FuzzyRule = require('../models/FuzzyRule');
 const Result = require('../models/Result');
 const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
+const AttainmentTarget = require('../models/AttainmentTarget');
+const ImprovementPlan = require('../models/ImprovementPlan');
 const { DEFAULT_RULES } = require('../services/fuzzyService');
 
 const run = async () => {
@@ -26,7 +28,9 @@ const run = async () => {
     FuzzyRule.deleteMany(),
     Result.deleteMany(),
     Notification.deleteMany(),
-    AuditLog.deleteMany()
+    AuditLog.deleteMany(),
+    AttainmentTarget.deleteMany(),
+    ImprovementPlan.deleteMany()
   ]);
 
   const department = await Department.create({
@@ -166,6 +170,46 @@ const run = async () => {
       { cloCode: 'CLO2', ploCode: 'PLO3', weight: 0.4 },
       { cloCode: 'CLO3', ploCode: 'PLO3', weight: 1 }
     ]
+  });
+
+  await AttainmentTarget.insertMany([
+    {
+      outcomeType: 'CLO',
+      targetAttainment: 65,
+      scopeType: 'institution',
+      notes: 'Baseline institutional CLO attainment expectation',
+      createdBy: accreditationOfficer._id,
+      updatedBy: accreditationOfficer._id
+    },
+    {
+      outcomeType: 'PLO',
+      targetAttainment: 70,
+      scopeType: 'program',
+      program: program._id,
+      department: department._id,
+      notes: 'Program-level PLO attainment benchmark',
+      createdBy: accreditationOfficer._id,
+      updatedBy: accreditationOfficer._id
+    }
+  ]);
+
+  await ImprovementPlan.create({
+    academicTerm: '2026 Spring',
+    outcomeType: 'PLO',
+    outcomeCode: 'PLO2',
+    currentAttainment: 58,
+    targetAttainment: 70,
+    rootCause: 'Students showed difficulty in analytical decomposition during applied modeling tasks.',
+    proposedAction: 'Revise course assessment sequencing and add guided problem-analysis workshops before midterm.',
+    improvementNote: 'Coordinate with assigned faculty and department head to update problem-based practice sessions.',
+    status: 'open',
+    department: department._id,
+    program: program._id,
+    course: course._id,
+    assignedTo: faculty._id,
+    dueDate: new Date('2026-06-30'),
+    createdBy: accreditationOfficer._id,
+    updatedBy: accreditationOfficer._id
   });
 
   await FuzzyRule.insertMany(DEFAULT_RULES);
