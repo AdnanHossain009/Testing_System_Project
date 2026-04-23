@@ -20,6 +20,7 @@ const reportRoutes = require('./routes/reportRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const improvementPlanRoutes = require('./routes/improvementPlanRoutes');
 const evidenceRoutes = require('./routes/evidenceRoutes');
+const studentAssistantRoutes = require('./routes/studentAssistantRoutes');
 
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -65,6 +66,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/improvement-plans', improvementPlanRoutes);
 app.use('/api/evidence', evidenceRoutes);
+app.use('/api/student-assistant', studentAssistantRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

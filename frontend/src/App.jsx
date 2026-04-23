@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
 import StudentDashboard from './pages/StudentDashboard';
+import StudentAssistantPage from './pages/StudentAssistantPage';
 import HeadDashboard from './pages/HeadDashboard';
 import AccreditationDashboard from './pages/AccreditationDashboard';
 import DepartmentsPage from './pages/DepartmentsPage';
@@ -98,6 +99,7 @@ const App = () => {
       <Route element={<ProtectedRoute allowedRoles={['student']} />}>
         <Route element={<Layout />}>
           <Route path="/dashboard/student" element={<StudentDashboard />} />
+          <Route path="/student/assistant" element={<StudentAssistantPage />} />
           <Route path="/enrollments/history" element={<EnrollmentHistoryPage />} />
         </Route>
       </Route>

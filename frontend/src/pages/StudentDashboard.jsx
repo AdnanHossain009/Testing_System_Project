@@ -97,6 +97,9 @@ const StudentDashboard = () => {
       </div>
 
       <div className="inline-actions" style={{ marginBottom: '1rem' }}>
+        <Link className="btn" to="/student/assistant">
+          Open AI Assistant
+        </Link>
         <Link className="btn btn-secondary" to="/courses">
           Browse Courses
         </Link>
@@ -106,6 +109,28 @@ const StudentDashboard = () => {
         <Link className="btn btn-secondary" to="/notifications">
           Notifications
         </Link>
+      </div>
+
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <div className="section-heading">
+          <div>
+            <h3>AI Academic Assistant</h3>
+            <p className="muted">
+              Ask grounded questions about weak CLOs, weak PLOs, risk, fuzzy score, and what to improve next.
+            </p>
+          </div>
+          <Link className="btn btn-secondary" to="/student/assistant">
+            Start Chat
+          </Link>
+        </div>
+
+        <div className="assistant-prompt-grid">
+          {['Which CLO am I weak in?', 'What should I improve first?', 'Why is my risk high?', 'Which course is hurting my performance?'].map((prompt) => (
+            <Link key={prompt} className="assistant-prompt-chip assistant-prompt-link" to="/student/assistant">
+              {prompt}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>

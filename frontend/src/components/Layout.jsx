@@ -41,6 +41,7 @@ const menuByRole = {
   ],
   student: [
     { to: '/dashboard/student', label: 'Dashboard' },
+    { to: '/student/assistant', label: 'AI Assistant' },
     { to: '/courses', label: 'Courses' },
     { to: '/enrollments/history', label: 'Enrollment History' },
     { to: '/results', label: 'My Results' },
