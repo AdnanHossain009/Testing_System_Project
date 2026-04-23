@@ -15,6 +15,9 @@ const menuByRole = {
     { to: '/users', label: 'Users' },
     { to: '/high-risk-students', label: 'High Risk Students' },
     { to: '/accreditation/improvement-plans', label: 'Improvement Plans' },
+    { to: '/accreditation/evidence-manager', label: 'Evidence Manager' },
+    { to: '/accreditation/curriculum-governance', label: 'Curriculum Governance' },
+    { to: '/accreditation/reports', label: 'Accreditation Reports' },
     { to: '/departments', label: 'Departments' },
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
@@ -24,6 +27,7 @@ const menuByRole = {
   faculty: [
     { to: '/dashboard/faculty', label: 'Dashboard' },
     { to: '/faculty/courses', label: 'Assigned Courses' },
+    { to: '/faculty/evidence', label: 'Evidence Upload' },
     { to: '/faculty/weak-students', label: 'Weak Students' },
     { to: '/course-requests', label: 'Add Course' },
     { to: '/courses', label: 'Courses' },
@@ -46,6 +50,9 @@ const menuByRole = {
   head: [
     { to: '/dashboard/head', label: 'Dashboard' },
     { to: '/head/course-requests', label: 'Course Requests' },
+    { to: '/accreditation/evidence-manager', label: 'Evidence Manager' },
+    { to: '/accreditation/curriculum-governance', label: 'Curriculum Governance' },
+    { to: '/accreditation/reports', label: 'Accreditation Reports' },
     { to: '/programs', label: 'Programs' },
     { to: '/courses', label: 'Courses' },
     { to: '/analytics', label: 'Analytics' },

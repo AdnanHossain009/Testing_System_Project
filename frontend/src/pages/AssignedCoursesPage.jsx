@@ -83,9 +83,14 @@ const AssignedCoursesPage = () => {
                   <td>{performance?.averageFuzzy ?? '0'}</td>
                   <td>{performance?.totalStudents ?? '0'}</td>
                   <td>
-                    <Link className="btn btn-secondary" to={`/courses/${item._id}`}>
-                      View details
-                    </Link>
+                    <div className="inline-actions">
+                      <Link className="btn btn-secondary" to={`/courses/${item._id}`}>
+                        View details
+                      </Link>
+                      <Link className="btn btn-secondary" to={`/faculty/evidence?courseId=${item._id}`}>
+                        Upload evidence
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               );

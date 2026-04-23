@@ -4,6 +4,13 @@ const Course = require('../models/Course');
 const Assessment = require('../models/Assessment');
 const CLOPLOMapping = require('../models/CLOPLOMapping');
 const { buildCourseAnalytics } = require('../services/analyticsService');
+const { logAction } = require('../services/auditService');
+const {
+  getReportCatalog,
+  normalizeReportFilters,
+  buildReportPreview,
+  buildCsvExport
+} = require('../services/accreditationReportingService');
 const asyncHandler = require('../utils/asyncHandler');
 const { success } = require('../utils/apiResponse');
 
@@ -100,4 +107,143 @@ const courseSummaryReport = asyncHandler(async (req, res) => {
   return success(res, { course, assessments, mapping, analytics }, 'Course summary report fetched.');
 });
 
-module.exports = { studentPdfReport, courseSummaryReport };
+const accreditationReportCatalog = asyncHandler(async (req, res) => {
+  return success(res, { reports: getReportCatalog() }, 'Accreditation report catalog fetched.');
+});
+
+const accreditationReportPreview = asyncHandler(async (req, res) => {
+  const filters = normalizeReportFilters(req.query);
+  const preview = await buildReportPreview(req.params.reportType, filters);
+
+  await logAction({
+    actor: req.user._id,
+    action: 'PREVIEW_ACCREDITATION_REPORT',
+    entityType: 'AccreditationReport',
+    entityId: preview.reportType,
+    metadata: {
+      filters
+    }
+  });
+
+  return success(res, { report: preview }, 'Accreditation report preview fetched.');
+});
+
+const writePdfSection = (doc, section) => {
+  doc.moveDown(0.5);
+  doc.fontSize(14).text(section.title, { underline: true });
+
+  if (section.description) {
+    doc.moveDown(0.2);
+    doc.fontSize(10).fillColor('#475569').text(section.description);
+    doc.fillColor('black');
+  }
+
+  if (section.type === 'text') {
+    doc.moveDown(0.3);
+    doc.fontSize(11).text(section.body || 'No narrative provided.');
+    return;
+  }
+
+  if (section.type === 'list') {
+    (section.items || []).forEach((item) => {
+      doc.moveDown(0.15);
+      doc.fontSize(11).text(`${item.label}: ${item.value}`);
+    });
+    return;
+  }
+
+  if (section.type === 'table') {
+    const columns = section.columns || [];
+    const rows = section.rows || [];
+
+    if (!rows.length) {
+      doc.moveDown(0.2);
+      doc.fontSize(11).text('No rows available.');
+      return;
+    }
+
+    rows.slice(0, 30).forEach((row, index) => {
+      const line = columns.map((column) => `${column.label}: ${row[column.key] ?? ''}`).join(' | ');
+      doc.moveDown(index === 0 ? 0.25 : 0.15);
+      doc.fontSize(10).text(line, {
+        width: doc.page.width - doc.page.margins.left - doc.page.margins.right
+      });
+    });
+
+    if (rows.length > 30) {
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#64748b').text(`Additional ${rows.length - 30} row(s) omitted in PDF export preview.`).fillColor('black');
+    }
+  }
+};
+
+const accreditationReportExport = asyncHandler(async (req, res) => {
+  const filters = normalizeReportFilters(req.query);
+  const format = String(req.query.format || 'pdf').toLowerCase();
+  const preview = await buildReportPreview(req.params.reportType, filters);
+
+  await logAction({
+    actor: req.user._id,
+    action: 'EXPORT_ACCREDITATION_REPORT',
+    entityType: 'AccreditationReport',
+    entityId: preview.reportType,
+    metadata: {
+      format,
+      filters
+    }
+  });
+
+  if (format === 'json') {
+    res.setHeader('Content-Disposition', `attachment; filename=${preview.exportBaseName}.json`);
+    return res.json(preview);
+  }
+
+  if (format === 'csv') {
+    const csvExport = buildCsvExport(preview);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${csvExport.filename}`);
+    return res.send(csvExport.content);
+  }
+
+  if (format !== 'pdf') {
+    res.status(400);
+    throw new Error('Unsupported export format.');
+  }
+
+  const doc = new PDFDocument({ margin: 45 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=${preview.exportBaseName}.pdf`);
+  doc.pipe(res);
+
+  doc.fontSize(18).text(preview.title, { underline: true });
+  doc.moveDown(0.3);
+  doc.fontSize(11).fillColor('#475569').text(preview.description || '').fillColor('black');
+  doc.moveDown(0.5);
+  doc.fontSize(10).text(`Generated: ${new Date(preview.generatedAt).toLocaleString()}`);
+
+  if (preview.summaryCards?.length) {
+    doc.moveDown(0.4);
+    doc.fontSize(14).text('Summary Metrics', { underline: true });
+    preview.summaryCards.forEach((item) => {
+      doc.moveDown(0.15);
+      doc.fontSize(11).text(`${item.label}: ${item.value}`);
+    });
+  }
+
+  (preview.sections || []).forEach((section) => {
+    if (doc.y > doc.page.height - 120) {
+      doc.addPage();
+    }
+    writePdfSection(doc, section);
+  });
+
+  doc.end();
+});
+
+module.exports = {
+  studentPdfReport,
+  courseSummaryReport,
+  accreditationReportCatalog,
+  accreditationReportPreview,
+  accreditationReportExport
+};

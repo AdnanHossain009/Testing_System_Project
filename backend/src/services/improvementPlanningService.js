@@ -620,5 +620,6 @@ module.exports = {
   buildPlanVisibilityFilter,
   applyPlanFilters,
   populatePlanQuery,
-  formatScopeLabel
+  formatScopeLabel,
+  resolveTargetForOutcome
 };

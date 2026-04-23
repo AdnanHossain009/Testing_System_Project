@@ -3,9 +3,18 @@ const path = require('path');
 const multer = require('multer');
 
 const courseRequestUploadRoot = path.join(__dirname, '..', '..', 'uploads', 'course-requests');
+const evidenceUploadRoot = path.join(__dirname, '..', '..', 'uploads', 'evidence');
+
+const ensureUploadRoot = (targetPath) => {
+  fs.mkdirSync(targetPath, { recursive: true });
+};
 
 const ensureCourseRequestUploadRoot = () => {
-  fs.mkdirSync(courseRequestUploadRoot, { recursive: true });
+  ensureUploadRoot(courseRequestUploadRoot);
+};
+
+const ensureEvidenceUploadRoot = () => {
+  ensureUploadRoot(evidenceUploadRoot);
 };
 
 const sanitizeBaseName = (filename = 'course-outline') =>
@@ -16,17 +25,24 @@ const sanitizeBaseName = (filename = 'course-outline') =>
     .replace(/^-|-$/g, '')
     .toLowerCase() || 'course-outline';
 
-const storage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    ensureCourseRequestUploadRoot();
-    callback(null, courseRequestUploadRoot);
-  },
-  filename: (req, file, callback) => {
-    const timestamp = Date.now();
-    const uniqueSuffix = Math.round(Math.random() * 1e9);
-    const baseName = sanitizeBaseName(file.originalname);
-    callback(null, `${timestamp}-${uniqueSuffix}-${baseName}.pdf`);
-  }
+const buildStorage = ({ rootPath, extensionResolver }) =>
+  multer.diskStorage({
+    destination: (req, file, callback) => {
+      ensureUploadRoot(rootPath);
+      callback(null, rootPath);
+    },
+    filename: (req, file, callback) => {
+      const timestamp = Date.now();
+      const uniqueSuffix = Math.round(Math.random() * 1e9);
+      const baseName = sanitizeBaseName(file.originalname);
+      const extension = extensionResolver(file);
+      callback(null, `${timestamp}-${uniqueSuffix}-${baseName}${extension}`);
+    }
+  });
+
+const courseRequestStorage = buildStorage({
+  rootPath: courseRequestUploadRoot,
+  extensionResolver: () => '.pdf'
 });
 
 const fileFilter = (req, file, callback) => {
@@ -42,15 +58,80 @@ const fileFilter = (req, file, callback) => {
 };
 
 const courseRequestPdfUpload = multer({
-  storage,
+  storage: courseRequestStorage,
   fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024
   }
 });
 
+const evidenceAllowedExtensions = new Set([
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.ppt',
+  '.pptx',
+  '.xls',
+  '.xlsx',
+  '.csv',
+  '.txt',
+  '.zip',
+  '.rar',
+  '.7z',
+  '.png',
+  '.jpg',
+  '.jpeg'
+]);
+
+const evidenceAllowedMimeTypes = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+  'text/csv',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/vnd.rar',
+  'application/x-rar-compressed',
+  'application/x-7z-compressed',
+  'image/png',
+  'image/jpeg'
+]);
+
+const evidenceStorage = buildStorage({
+  rootPath: evidenceUploadRoot,
+  extensionResolver: (file) => path.extname(file.originalname || '').toLowerCase() || ''
+});
+
+const evidenceFileFilter = (req, file, callback) => {
+  const extension = path.extname(String(file.originalname || '')).toLowerCase();
+  const isAllowedType = evidenceAllowedMimeTypes.has(file.mimetype) || evidenceAllowedExtensions.has(extension);
+
+  if (!isAllowedType) {
+    callback(new Error('Unsupported evidence file type.'));
+    return;
+  }
+
+  callback(null, true);
+};
+
+const evidenceArtifactUpload = multer({
+  storage: evidenceStorage,
+  fileFilter: evidenceFileFilter,
+  limits: {
+    fileSize: 25 * 1024 * 1024
+  }
+});
+
 module.exports = {
   courseRequestPdfUpload,
   courseRequestUploadRoot,
-  ensureCourseRequestUploadRoot
+  ensureCourseRequestUploadRoot,
+  evidenceArtifactUpload,
+  evidenceUploadRoot,
+  ensureEvidenceUploadRoot
 };

@@ -31,10 +31,15 @@ import EnrollmentHistoryPage from './pages/EnrollmentHistoryPage';
 import HeadCourseRequestsPage from './pages/HeadCourseRequestsPage';
 import CourseRequestReviewPage from './pages/CourseRequestReviewPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
-import AccreditationModulePlaceholderPage from './pages/AccreditationModulePlaceholderPage';
 import ImprovementPlansPage from './pages/ImprovementPlansPage';
 import ImprovementPlanFormPage from './pages/ImprovementPlanFormPage';
 import ImprovementPlanDetailsPage from './pages/ImprovementPlanDetailsPage';
+import FacultyEvidencePage from './pages/FacultyEvidencePage';
+import EvidenceManagerPage from './pages/EvidenceManagerPage';
+import EvidenceSampleSetDetailsPage from './pages/EvidenceSampleSetDetailsPage';
+import CurriculumGovernancePage from './pages/CurriculumGovernancePage';
+import AccreditationReportsPage from './pages/AccreditationReportsPage';
+import AccreditationReportPreviewPage from './pages/AccreditationReportPreviewPage';
 
 const App = () => {
   return (
@@ -86,6 +91,7 @@ const App = () => {
           <Route path="/mappings" element={<MappingPage />} />
           <Route path="/faculty/courses" element={<AssignedCoursesPage />} />
           <Route path="/faculty/weak-students" element={<WeakStudentsPage />} />
+          <Route path="/faculty/evidence" element={<FacultyEvidencePage />} />
         </Route>
       </Route>
 
@@ -104,36 +110,12 @@ const App = () => {
         </Route>
       </Route>
 
-      <Route element={<ProtectedRoute allowedRoles={['accreditation_officer']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['accreditation_officer', 'admin', 'head']} />}>
         <Route element={<Layout />}>
           <Route path="/dashboard/accreditation" element={<AccreditationDashboard />} />
-          <Route
-            path="/accreditation/evidence-manager"
-            element={
-              <AccreditationModulePlaceholderPage
-                title="Evidence Manager"
-                description="Organize accreditation evidence, map artifacts to outcomes, and prepare a governed repository for future review cycles."
-              />
-            }
-          />
-          <Route
-            path="/accreditation/curriculum-governance"
-            element={
-              <AccreditationModulePlaceholderPage
-                title="Curriculum Governance"
-                description="Review curriculum coverage, outcome alignment, and mapping readiness across active programs and courses."
-              />
-            }
-          />
-          <Route
-            path="/accreditation/reports"
-            element={
-              <AccreditationModulePlaceholderPage
-                title="Accreditation Reports"
-                description="Prepare institution-wide accreditation summaries, evidence-backed narratives, and export-ready reporting workflows."
-              />
-            }
-          />
+          <Route path="/accreditation/curriculum-governance" element={<CurriculumGovernancePage />} />
+          <Route path="/accreditation/reports" element={<AccreditationReportsPage />} />
+          <Route path="/accreditation/reports/:reportType" element={<AccreditationReportPreviewPage />} />
         </Route>
       </Route>
 
@@ -141,6 +123,13 @@ const App = () => {
         <Route element={<Layout />}>
           <Route path="/accreditation/improvement-plans" element={<ImprovementPlansPage />} />
           <Route path="/accreditation/improvement-plans/:planId" element={<ImprovementPlanDetailsPage />} />
+          <Route path="/accreditation/evidence-manager/sample-sets/:sampleSetId" element={<EvidenceSampleSetDetailsPage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['admin', 'head', 'accreditation_officer']} />}>
+        <Route element={<Layout />}>
+          <Route path="/accreditation/evidence-manager" element={<EvidenceManagerPage />} />
         </Route>
       </Route>
 

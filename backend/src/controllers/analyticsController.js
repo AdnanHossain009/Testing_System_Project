@@ -12,6 +12,7 @@ const {
 } = require('../services/analyticsService');
 const { buildStudentAnalytics } = require('../services/studentAnalyticsService');
 const { buildPlanDashboardStats } = require('../services/improvementPlanningService');
+const { buildCurriculumGovernanceSummary } = require('../services/curriculumGovernanceService');
 
 const adminSummary = asyncHandler(async (req, res) => {
   const [userCount, courseCount, departmentCount, highRiskCount, roleStats] = await Promise.all([
@@ -176,6 +177,11 @@ const courseAnalytics = asyncHandler(async (req, res) => {
   return success(res, analytics, 'Course analytics fetched.');
 });
 
+const curriculumGovernance = asyncHandler(async (req, res) => {
+  const governance = await buildCurriculumGovernanceSummary(req.query);
+  return success(res, governance, 'Curriculum governance analytics fetched.');
+});
+
 const weakStudentsByCourse = asyncHandler(async (req, res) => {
   const analytics = await buildCourseAnalytics(req.params.courseId);
   return success(res, { weakStudents: analytics.weakStudents }, 'Weak students fetched.');
@@ -188,5 +194,6 @@ module.exports = {
   headSummary,
   accreditationSummary,
   courseAnalytics,
+  curriculumGovernance,
   weakStudentsByCourse
 };

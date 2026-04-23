@@ -13,6 +13,8 @@ const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
 const AttainmentTarget = require('../models/AttainmentTarget');
 const ImprovementPlan = require('../models/ImprovementPlan');
+const EvidenceArtifact = require('../models/EvidenceArtifact');
+const EvidenceSampleSet = require('../models/EvidenceSampleSet');
 const { DEFAULT_RULES } = require('../services/fuzzyService');
 
 const run = async () => {
@@ -30,7 +32,9 @@ const run = async () => {
     Notification.deleteMany(),
     AuditLog.deleteMany(),
     AttainmentTarget.deleteMany(),
-    ImprovementPlan.deleteMany()
+    ImprovementPlan.deleteMany(),
+    EvidenceArtifact.deleteMany(),
+    EvidenceSampleSet.deleteMany()
   ]);
 
   const department = await Department.create({

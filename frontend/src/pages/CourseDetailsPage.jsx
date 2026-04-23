@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
+import { useAuth } from '../context/AuthContext';
 
 const formatCloSplit = (assessment) => {
   if (assessment?.cloDistribution?.length) {
@@ -17,6 +18,7 @@ const formatCloSplit = (assessment) => {
 };
 
 const CourseDetailsPage = () => {
+  const { user } = useAuth();
   const { courseId } = useParams();
   const [data, setData] = useState(null);
 
@@ -51,6 +53,11 @@ const CourseDetailsPage = () => {
         <Link className="btn btn-secondary" to="/analytics">
           Open Analytics
         </Link>
+        {user?.role === 'faculty' ? (
+          <Link className="btn btn-secondary" to={`/faculty/evidence?courseId=${courseId}`}>
+            Upload Evidence
+          </Link>
+        ) : null}
       </div>
 
       <div className="grid grid-4">

@@ -72,7 +72,7 @@ const AccreditationDashboard = () => {
         <div className="card">
           <h3>Accreditation Modules</h3>
           <p className="muted">
-            Improvement planning is now connected to benchmark targets and below-target outcome detection, while the remaining accreditation modules stay scaffolded for later expansion.
+            Improvement planning, evidence management, curriculum governance, and accreditation reporting are now connected so institutional review can move from weak outcome detection to self-study preparation.
           </p>
           <div className="inline-actions">
             <Link className="btn btn-secondary" to="/accreditation/improvement-plans">
@@ -86,6 +86,9 @@ const AccreditationDashboard = () => {
             </Link>
             <Link className="btn btn-secondary" to="/accreditation/reports">
               Accreditation Reports
+            </Link>
+            <Link className="btn btn-secondary" to="/accreditation/reports/self_study_summary">
+              Self-Study Builder
             </Link>
           </div>
         </div>
