@@ -53,6 +53,10 @@ const FacultyEvidencePage = () => {
   const [fileInputKey, setFileInputKey] = useState(0);
 
   const selectedCourseId = form.course || filters.courseId || searchParams.get('courseId') || '';
+  const activeCourse = useMemo(
+    () => courses.find((item) => String(item._id) === String(selectedCourseId || form.course)) || null,
+    [courses, form.course, selectedCourseId]
+  );
 
   const filteredAssessments = useMemo(
     () =>
@@ -218,6 +222,10 @@ const FacultyEvidencePage = () => {
   const activeArtifacts = artifacts.filter((item) => item.status === 'active').length;
   const assessmentLinkedArtifacts = artifacts.filter((item) => item.assessment).length;
   const privateArtifacts = artifacts.filter((item) => item.visibility === 'private').length;
+  const inReviewSampleSets = sampleSets.filter((item) => item.status === 'in_review').length;
+  const selectedCourseArtifactCount = activeCourse
+    ? artifacts.filter((item) => String(item.course?._id || item.course) === String(activeCourse._id)).length
+    : artifacts.length;
 
   return (
     <div>
@@ -237,13 +245,15 @@ const FacultyEvidencePage = () => {
         <StatCard label="Private Evidence" value={privateArtifacts} />
       </div>
 
-      <div className="grid grid-2 align-start">
+      <div className="workspace-grid">
         <form className="card" onSubmit={submitEvidence}>
           <div className="section-heading">
             <div>
-              <h3>Upload Academic Evidence</h3>
+              <span className="kicker">Evidence Workspace</span>
+              <h3 style={{ marginTop: '0.55rem' }}>Upload Academic Evidence</h3>
               <p className="muted">Attach evidence to one of your assigned courses so accreditation reviewers can sample it later.</p>
             </div>
+            {activeCourse ? <span className="status-badge badge-muted">{activeCourse.code}</span> : null}
           </div>
 
           <div className="upload-box">
@@ -405,50 +415,101 @@ const FacultyEvidencePage = () => {
           </div>
         </form>
 
-        <div className="card">
-          <div className="section-heading">
-            <div>
-              <h3>Relevant Sample Sets</h3>
-              <p className="muted">These sample sets already include your course evidence or assign you as a reviewer.</p>
+        <aside className="workspace-rail">
+          <div className="card card-accent">
+            <span className="kicker">Upload Context</span>
+            <div className="section-heading" style={{ marginTop: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{activeCourse?.code || 'No course selected'}</h3>
+                <p className="muted">{activeCourse?.name || 'Choose a course to narrow assessments, students, and evidence scope.'}</p>
+              </div>
             </div>
+
+            <div className="mini-metrics">
+              <div className="mini-metric">
+                <span className="mini-metric-label">Course evidence</span>
+                <span className="mini-metric-value">{selectedCourseArtifactCount}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Assessments</span>
+                <span className="mini-metric-value">{filteredAssessments.length}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Students</span>
+                <span className="mini-metric-value">{filteredStudents.length}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Sets in review</span>
+                <span className="mini-metric-value">{inReviewSampleSets}</span>
+              </div>
+            </div>
+
+            <ul className="data-points" style={{ marginTop: '0.9rem' }}>
+              <li>
+                <strong>Visibility</strong>
+                <span>{form.visibility}</span>
+              </li>
+              <li>
+                <strong>Outcome link</strong>
+                <span>{form.outcomeType ? `${form.outcomeType} ${form.outcomeCode || 'pending code'}` : 'Not linked'}</span>
+              </li>
+              <li>
+                <strong>Selected file</strong>
+                <span>{form.artifactFile?.name || 'No file selected yet'}</span>
+              </li>
+            </ul>
           </div>
 
-          {sampleSets.length ? (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Scope</th>
-                  <th>Reviewer</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="card">
+            <div className="section-heading">
+              <div>
+                <h3>Relevant Sample Sets</h3>
+                <p className="muted">These sample sets already include your evidence or assign you as a reviewer.</p>
+              </div>
+              <span className="status-badge badge-muted">{sampleSets.length} sets</span>
+            </div>
+
+            {sampleSets.length ? (
+              <div className="stack">
                 {sampleSets.map((item) => (
-                  <tr key={item._id}>
-                    <td>
-                      <strong>{item.title}</strong>
-                      <div className="muted">{item.groupBy.replace('_', ' ')}</div>
-                    </td>
-                    <td>{buildSampleSetScopeText(item)}</td>
-                    <td>{item.reviewer?.name || 'Unassigned'}</td>
-                    <td>
+                  <div className="subcard" key={item._id}>
+                    <div className="section-heading">
+                      <div>
+                        <strong>{item.title}</strong>
+                        <div className="muted">{item.groupBy.replace('_', ' ')}</div>
+                      </div>
                       <span className={`status-badge ${getSampleSetStatusClassName(item.status)}`}>{item.status.replace('_', ' ')}</span>
-                    </td>
-                    <td>
-                      <Link className="btn btn-secondary btn-small" to={`/accreditation/evidence-manager/sample-sets/${item._id}`}>
-                        View
-                      </Link>
-                    </td>
-                  </tr>
+                    </div>
+
+                    <div className="request-meta-grid">
+                      <span>
+                        <strong>Scope:</strong> {buildSampleSetScopeText(item)}
+                      </span>
+                      <span>
+                        <strong>Reviewer:</strong> {item.reviewer?.name || 'Unassigned'}
+                      </span>
+                    </div>
+
+                    <Link className="btn btn-secondary btn-small" to={`/accreditation/evidence-manager/sample-sets/${item._id}`}>
+                      View sample set
+                    </Link>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="muted">No sample sets include your evidence yet.</p>
-          )}
-        </div>
+              </div>
+            ) : (
+              <p className="muted">No sample sets include your evidence yet.</p>
+            )}
+          </div>
+
+          <div className="card">
+            <h3>Upload Checklist</h3>
+            <ul className="helper-list">
+              <li>Use a title that makes sense to an external reviewer without opening the file.</li>
+              <li>Match the academic term and course so the artifact is easy to trace later.</li>
+              <li>Link assessments or students only when the evidence truly belongs to that record.</li>
+            </ul>
+          </div>
+        </aside>
       </div>
 
       <form className="card" onSubmit={applyFilters} style={{ marginBottom: '1rem' }}>

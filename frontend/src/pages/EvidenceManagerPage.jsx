@@ -267,6 +267,8 @@ const EvidenceManagerPage = () => {
     0
   );
   const inReviewSets = sampleSets.filter((item) => item.status === 'in_review').length;
+  const draftSets = sampleSets.filter((item) => item.status === 'draft').length;
+  const assignedReviewerSets = sampleSets.filter((item) => item.reviewer).length;
 
   return (
     <div>
@@ -412,7 +414,7 @@ const EvidenceManagerPage = () => {
         </div>
       </form>
 
-      <div className="grid grid-2 align-start">
+      <div className="workspace-grid">
         <div className="card">
           <div className="section-heading">
             <div>
@@ -492,55 +494,103 @@ const EvidenceManagerPage = () => {
           )}
         </div>
 
-        <div className="card">
-          <div className="section-heading">
-            <div>
-              <h3>Sample Set Register</h3>
-              <p className="muted">Track created sampling sets, reviewer assignments, and review progress.</p>
+        <aside className="workspace-rail">
+          <div className="card card-accent">
+            <span className="kicker">Review Rail</span>
+            <div className="section-heading" style={{ marginTop: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Sample-set coverage</h3>
+                <p className="muted">Keep reviewer assignments and review status visible while assembling each evidence pack.</p>
+              </div>
             </div>
+
+            <div className="mini-metrics">
+              <div className="mini-metric">
+                <span className="mini-metric-label">Draft sets</span>
+                <span className="mini-metric-value">{draftSets}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">In review</span>
+                <span className="mini-metric-value">{inReviewSets}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">With reviewer</span>
+                <span className="mini-metric-value">{assignedReviewerSets}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Selected now</span>
+                <span className="mini-metric-value">{selectedArtifactIds.length}</span>
+              </div>
+            </div>
+
+            <ul className="data-points" style={{ marginTop: '0.9rem' }}>
+              <li>
+                <strong>Visible artifacts</strong>
+                <span>{artifacts.length}</span>
+              </li>
+              <li>
+                <strong>Reviewed samples</strong>
+                <span>{reviewedArtifacts}</span>
+              </li>
+            </ul>
           </div>
 
-          {sampleSets.length ? (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Scope</th>
-                  <th>Reviewer</th>
-                  <th>Artifacts</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="card">
+            <div className="section-heading">
+              <div>
+                <h3>Sample Set Register</h3>
+                <p className="muted">Track created sampling sets, reviewer assignments, and review progress.</p>
+              </div>
+              <span className="status-badge badge-muted">{sampleSets.length} sets</span>
+            </div>
+
+            {sampleSets.length ? (
+              <div className="stack">
                 {sampleSets.map((item) => (
-                  <tr key={item._id}>
-                    <td>
-                      <strong>{item.title}</strong>
-                      <div className="muted">{item.groupBy.replace('_', ' ')}</div>
-                    </td>
-                    <td>{buildSampleSetScopeText(item)}</td>
-                    <td>{item.reviewer?.name || 'Unassigned'}</td>
-                    <td>
-                      <div>{item.totalArtifacts || item.sampledArtifacts?.length || 0} artifacts</div>
-                      <div className="muted">{item.reviewedCount || 0} reviewed</div>
-                    </td>
-                    <td>
+                  <div className="subcard" key={item._id}>
+                    <div className="section-heading">
+                      <div>
+                        <strong>{item.title}</strong>
+                        <div className="muted">{item.groupBy.replace('_', ' ')}</div>
+                      </div>
                       <span className={`status-badge ${getSampleSetStatusClassName(item.status)}`}>{item.status.replace('_', ' ')}</span>
-                    </td>
-                    <td>
-                      <Link className="btn btn-secondary btn-small" to={`/accreditation/evidence-manager/sample-sets/${item._id}`}>
-                        View
-                      </Link>
-                    </td>
-                  </tr>
+                    </div>
+
+                    <div className="request-meta-grid">
+                      <span>
+                        <strong>Scope:</strong> {buildSampleSetScopeText(item)}
+                      </span>
+                      <span>
+                        <strong>Reviewer:</strong> {item.reviewer?.name || 'Unassigned'}
+                      </span>
+                      <span>
+                        <strong>Artifacts:</strong> {item.totalArtifacts || item.sampledArtifacts?.length || 0}
+                      </span>
+                      <span>
+                        <strong>Reviewed:</strong> {item.reviewedCount || 0}
+                      </span>
+                    </div>
+
+                    <Link className="btn btn-secondary btn-small" to={`/accreditation/evidence-manager/sample-sets/${item._id}`}>
+                      View sample set
+                    </Link>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="muted">No sample sets matched the current filters.</p>
-          )}
-        </div>
+              </div>
+            ) : (
+              <p className="muted">No sample sets matched the current filters.</p>
+            )}
+          </div>
+
+          <div className="card">
+            <h3>Sampling Notes</h3>
+            <ul className="helper-list">
+              <li>Choose artifacts that collectively show outcome coverage, student work quality, and review traceability.</li>
+              <li>Assign a reviewer early when a set is ready to move beyond draft status.</li>
+              <li>Use scoped filters before sampling so each set tells a clean accreditation story.</li>
+            </ul>
+          </div>
+        </aside>
       </div>
 
       {canManage ? (

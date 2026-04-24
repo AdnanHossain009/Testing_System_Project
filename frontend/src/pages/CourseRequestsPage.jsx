@@ -53,6 +53,17 @@ const CourseRequestsPage = () => {
     () => programs.find((item) => item._id === form.program) || programs[0] || null,
     [form.program, programs]
   );
+  const requestStatusCounts = useMemo(
+    () =>
+      requests.reduce(
+        (summary, item) => ({
+          ...summary,
+          [item.status]: (summary[item.status] || 0) + 1
+        }),
+        { pending: 0, approved: 0, rejected: 0 }
+      ),
+    [requests]
+  );
 
   const loadPage = async () => {
     const [programResponse, requestResponse] = await Promise.all([
@@ -221,12 +232,13 @@ const CourseRequestsPage = () => {
         <span>4. Submit for approval</span>
       </div>
 
-      <div className="grid grid-2 align-start">
-        <form className="stack-lg" onSubmit={handleSubmit}>
+      <div className="workspace-grid">
+        <form className="workspace-main stack-lg" onSubmit={handleSubmit}>
           <section className="card">
             <div className="section-heading">
               <div>
-                <h3>Course Basics</h3>
+                <span className="kicker">Course Proposal</span>
+                <h3 style={{ marginTop: '0.55rem' }}>Course Basics</h3>
                 <p className="muted">Provide the official course identity and academic placement.</p>
               </div>
               <span className="status-badge badge-muted">
@@ -609,7 +621,51 @@ const CourseRequestsPage = () => {
           </section>
         </form>
 
-        <div className="stack-lg">
+        <aside className="workspace-rail">
+          <div className="card card-accent">
+            <span className="kicker">Draft Snapshot</span>
+            <div className="section-heading" style={{ marginTop: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{form.code || 'Untitled course draft'}</h3>
+                <p className="muted">{form.name || 'Add the course identity, then refine extracted outcomes before submission.'}</p>
+              </div>
+              <span className={`status-badge ${getStatusClassName(form.extraction?.status)}`}>
+                {form.extraction?.status || 'not_started'}
+              </span>
+            </div>
+
+            <div className="mini-metrics">
+              <div className="mini-metric">
+                <span className="mini-metric-label">CLO rows</span>
+                <span className="mini-metric-value">{form.clos.length}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">PLO rows</span>
+                <span className="mini-metric-value">{form.plos.length}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Mappings</span>
+                <span className="mini-metric-value">{form.mappings.length}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Assessments</span>
+                <span className="mini-metric-value">{form.assessments.length}</span>
+              </div>
+            </div>
+
+            <ul className="data-points" style={{ marginTop: '0.9rem' }}>
+              <li>
+                <strong>Program</strong>
+                <span>{selectedProgram?.code || 'Not selected'}</span>
+              </li>
+              <li>
+                <strong>PDF loaded</strong>
+                <span>{form.uploadedPdf?.originalName || 'No PDF attached yet'}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="stack-lg">
           <section className="card">
             <div className="section-heading">
               <div>
@@ -620,22 +676,24 @@ const CourseRequestsPage = () => {
             </div>
 
             {selectedProgram?.plos?.length ? (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>PLO</th>
-                    <th>Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedProgram.plos.map((item) => (
-                    <tr key={item.code}>
-                      <td>{item.code}</td>
-                      <td>{item.description}</td>
+              <div className="table-scroll">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>PLO</th>
+                      <th>Description</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selectedProgram.plos.map((item) => (
+                      <tr key={item.code}>
+                        <td>{item.code}</td>
+                        <td>{item.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="muted">This program does not have saved PLOs yet.</p>
             )}
@@ -648,6 +706,21 @@ const CourseRequestsPage = () => {
                 <p className="muted">Track pending, approved, and rejected submissions.</p>
               </div>
               <span className="status-badge badge-muted">{requests.length} total</span>
+            </div>
+
+            <div className="mini-metrics" style={{ marginTop: 0, marginBottom: '1rem' }}>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Pending</span>
+                <span className="mini-metric-value">{requestStatusCounts.pending}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Approved</span>
+                <span className="mini-metric-value">{requestStatusCounts.approved}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Rejected</span>
+                <span className="mini-metric-value">{requestStatusCounts.rejected}</span>
+              </div>
             </div>
 
             {requests.length === 0 ? (
@@ -708,7 +781,17 @@ const CourseRequestsPage = () => {
               </div>
             )}
           </section>
-        </div>
+
+          <div className="card">
+            <h3>Submission Notes</h3>
+            <ul className="helper-list">
+              <li>Extracted data is a draft, so review every CLO, mapping, and assessment before sending it forward.</li>
+              <li>Course codes and program selection should match the department catalog to avoid approval delays.</li>
+              <li>Add a short submission note whenever the PDF extraction missed items or needs reviewer context.</li>
+            </ul>
+          </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

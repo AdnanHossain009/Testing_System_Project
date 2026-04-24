@@ -315,6 +315,8 @@ const ImprovementPlansPage = () => {
   const openPlans = plans.filter((item) => item.status === 'open').length;
   const overduePlans = plans.filter((item) => item.overdue).length;
   const completedPlans = plans.filter((item) => ['completed', 'reviewed'].includes(item.status)).length;
+  const institutionTargets = targets.filter((item) => item.scopeType === 'institution').length;
+  const scopedTargets = targets.filter((item) => item.scopeType !== 'institution').length;
 
   return (
     <div>
@@ -423,11 +425,12 @@ const ImprovementPlansPage = () => {
       </form>
 
       {canManage ? (
-        <div className="grid grid-2 align-start">
+        <div className="workspace-grid">
           <form className="card" onSubmit={submitTarget}>
             <div className="section-heading">
               <div>
-                <h3>{editingTargetId ? 'Update Benchmark Target' : 'Add Benchmark Target'}</h3>
+                <span className="kicker">Benchmark Control</span>
+                <h3 style={{ marginTop: '0.55rem' }}>{editingTargetId ? 'Update Benchmark Target' : 'Add Benchmark Target'}</h3>
                 <p className="muted">
                   Configure attainment expectations by institution, department, program, or course.
                 </p>
@@ -539,45 +542,97 @@ const ImprovementPlansPage = () => {
             </div>
           </form>
 
-          <div className="card">
-            <div className="section-heading">
-              <div>
-                <h3>Configured Targets</h3>
-                <p className="muted">These benchmarks are used to detect below-target outcomes.</p>
+          <aside className="workspace-rail">
+            <div className="card card-accent">
+              <span className="kicker">Planning Summary</span>
+              <div className="section-heading" style={{ marginTop: '0.75rem' }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>{editingTargetId ? 'Editing target' : 'Benchmark coverage'}</h3>
+                  <p className="muted">Use a mix of institution-wide and scoped benchmarks so weak outcomes are explained in context.</p>
+                </div>
               </div>
+
+              <div className="mini-metrics">
+                <div className="mini-metric">
+                  <span className="mini-metric-label">Configured targets</span>
+                  <span className="mini-metric-value">{targets.length}</span>
+                </div>
+                <div className="mini-metric">
+                  <span className="mini-metric-label">Institution level</span>
+                  <span className="mini-metric-value">{institutionTargets}</span>
+                </div>
+                <div className="mini-metric">
+                  <span className="mini-metric-label">Scoped targets</span>
+                  <span className="mini-metric-value">{scopedTargets}</span>
+                </div>
+                <div className="mini-metric">
+                  <span className="mini-metric-label">Below target outcomes</span>
+                  <span className="mini-metric-value">{outcomes.length}</span>
+                </div>
+              </div>
+
+              <ul className="data-points" style={{ marginTop: '0.9rem' }}>
+                <li>
+                  <strong>Default benchmark</strong>
+                  <span>60 for CLO and PLO</span>
+                </li>
+                <li>
+                  <strong>Current form scope</strong>
+                  <span>{targetForm.scopeType}</span>
+                </li>
+              </ul>
             </div>
 
-            {targets.length ? (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Scope</th>
-                    <th>Outcome</th>
-                    <th>Target</th>
-                    <th>Term</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="card">
+              <div className="section-heading">
+                <div>
+                  <h3>Configured Targets</h3>
+                  <p className="muted">These benchmarks are used to detect below-target outcomes.</p>
+                </div>
+                <span className="status-badge badge-muted">{targets.length} targets</span>
+              </div>
+
+              {targets.length ? (
+                <div className="stack">
                   {targets.map((item) => (
-                    <tr key={item._id}>
-                      <td>{buildTargetScopeLabel(item)}</td>
-                      <td>{item.outcomeType}</td>
-                      <td>{item.targetAttainment}</td>
-                      <td>{item.academicTerm || 'All terms'}</td>
-                      <td>
-                        <button className="btn btn-secondary btn-small" type="button" onClick={() => editTarget(item)}>
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
+                    <div className="subcard" key={item._id}>
+                      <div className="section-heading">
+                        <div>
+                          <strong>{buildTargetScopeLabel(item)}</strong>
+                          <div className="muted">{item.academicTerm || 'All terms'}</div>
+                        </div>
+                        <span className="status-badge badge-muted">{item.outcomeType}</span>
+                      </div>
+
+                      <div className="request-meta-grid">
+                        <span>
+                          <strong>Target:</strong> {item.targetAttainment}
+                        </span>
+                        <span>
+                          <strong>Scope:</strong> {item.scopeType}
+                        </span>
+                      </div>
+
+                      <button className="btn btn-secondary btn-small" type="button" onClick={() => editTarget(item)}>
+                        Edit target
+                      </button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="muted">No benchmark targets configured yet. Default target is 60 for CLO and PLO.</p>
-            )}
-          </div>
+                </div>
+              ) : (
+                <p className="muted">No benchmark targets configured yet. Default target is 60 for CLO and PLO.</p>
+              )}
+            </div>
+
+            <div className="card">
+              <h3>Benchmark Tips</h3>
+              <ul className="helper-list">
+                <li>Institution targets are useful as a baseline, but scoped targets explain local realities better.</li>
+                <li>Course-level targets should only be more demanding when the evidence and resources justify it.</li>
+                <li>Use academic term filters when a temporary dip should not rewrite the long-term benchmark.</li>
+              </ul>
+            </div>
+          </aside>
         </div>
       ) : null}
 

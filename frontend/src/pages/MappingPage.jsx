@@ -19,6 +19,14 @@ const MappingPage = () => {
     () => courses.find((item) => item._id === courseId) || null,
     [courseId, courses]
   );
+  const validMappings = useMemo(
+    () => mappings.filter((item) => item.cloCode && item.ploCode),
+    [mappings]
+  );
+  const totalWeight = useMemo(
+    () => validMappings.reduce((total, item) => total + Number(item.weight || 0), 0),
+    [validMappings]
+  );
 
   const loadCourses = async () => {
     const response = await api.get('/courses', { params: { scope: 'assigned' } });
@@ -108,8 +116,19 @@ const MappingPage = () => {
 
       {feedback ? <div className={feedback.toLowerCase().includes('failed') ? 'error-box' : 'success-box'}>{feedback}</div> : null}
 
-      <div className="grid grid-2">
+      <div className="workspace-grid">
         <form className="card" onSubmit={saveHandler}>
+          <div className="section-heading">
+            <div>
+              <span className="kicker">Mapping Studio</span>
+              <h3 style={{ marginTop: '0.55rem' }}>Course-to-program alignment</h3>
+              <p className="muted" style={{ marginBottom: 0 }}>
+                Keep the mapping weights clean and traceable so attainment reports remain credible during review.
+              </p>
+            </div>
+            {selectedCourse ? <span className="status-badge badge-muted">{selectedCourse.code}</span> : null}
+          </div>
+
           <label>Course</label>
           <select value={courseId} onChange={(e) => setCourseId(e.target.value)} disabled={!courses.length}>
             {courses.map((item) => (
@@ -169,26 +188,69 @@ const MappingPage = () => {
           </div>
         </form>
 
-        <div className="stack-lg">
+        <aside className="workspace-rail">
+          <div className="card card-accent">
+            <span className="kicker">Alignment Snapshot</span>
+            <div className="section-heading" style={{ marginTop: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{selectedCourse?.name || 'Select a course'}</h3>
+                <p className="muted">{selectedCourse?.program?.name || 'Program context appears once a course is chosen.'}</p>
+              </div>
+            </div>
+
+            <div className="mini-metrics">
+              <div className="mini-metric">
+                <span className="mini-metric-label">Active rows</span>
+                <span className="mini-metric-value">{validMappings.length}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Total weight</span>
+                <span className="mini-metric-value">{totalWeight.toFixed(1)}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Course CLOs</span>
+                <span className="mini-metric-value">{selectedCourse?.clos?.length || 0}</span>
+              </div>
+              <div className="mini-metric">
+                <span className="mini-metric-label">Program PLOs</span>
+                <span className="mini-metric-value">{selectedCourse?.program?.plos?.length || 0}</span>
+              </div>
+            </div>
+
+            <ul className="data-points" style={{ marginTop: '0.9rem' }}>
+              <li>
+                <strong>Department</strong>
+                <span>{selectedCourse?.department?.code || selectedCourse?.department?.name || 'N/A'}</span>
+              </li>
+              <li>
+                <strong>Program code</strong>
+                <span>{selectedCourse?.program?.code || 'N/A'}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="stack-lg">
           <div className="card">
             <h3>Course CLO Reference</h3>
             {selectedCourse?.clos?.length ? (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>CLO</th>
-                    <th>Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedCourse.clos.map((item) => (
-                    <tr key={item.code}>
-                      <td>{item.code}</td>
-                      <td>{item.description}</td>
+              <div className="table-scroll">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>CLO</th>
+                      <th>Description</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selectedCourse.clos.map((item) => (
+                      <tr key={item.code}>
+                        <td>{item.code}</td>
+                        <td>{item.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="muted">No CLOs available for the selected course yet.</p>
             )}
@@ -197,27 +259,39 @@ const MappingPage = () => {
           <div className="card">
             <h3>Program PLO Reference</h3>
             {selectedCourse?.program?.plos?.length ? (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>PLO</th>
-                    <th>Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedCourse.program.plos.map((item) => (
-                    <tr key={item.code}>
-                      <td>{item.code}</td>
-                      <td>{item.description}</td>
+              <div className="table-scroll">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>PLO</th>
+                      <th>Description</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selectedCourse.program.plos.map((item) => (
+                      <tr key={item.code}>
+                        <td>{item.code}</td>
+                        <td>{item.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="muted">No PLOs saved for the selected program.</p>
             )}
           </div>
-        </div>
+
+          <div className="card">
+            <h3>Mapping Notes</h3>
+            <ul className="helper-list">
+              <li>Use consistent CLO and PLO codes so analytics can join the records correctly.</li>
+              <li>Weights should reflect actual contribution, not placeholder totals.</li>
+              <li>Duplicate pairs usually indicate overlap that should be merged before saving.</li>
+            </ul>
+          </div>
+          </div>
+        </aside>
       </div>
     </div>
   );
