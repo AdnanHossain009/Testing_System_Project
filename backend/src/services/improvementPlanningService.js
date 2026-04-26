@@ -4,6 +4,7 @@ const Result = require('../models/Result');
 const AttainmentTarget = require('../models/AttainmentTarget');
 const ImprovementPlan = require('../models/ImprovementPlan');
 const { buildCourseAnalytics } = require('./analyticsService');
+const { hasRole } = require('../utils/roleHelpers');
 
 const DEFAULT_TARGETS = {
   CLO: 60,
@@ -219,7 +220,7 @@ const listTargets = (filter = {}) =>
     .sort({ scopeType: 1, targetAttainment: -1, createdAt: -1 });
 
 const buildPlanVisibilityFilter = async (user) => {
-  if (['admin', 'accreditation_officer'].includes(user.role)) {
+  if (hasRole(user, 'admin', 'accreditation_officer')) {
     return {};
   }
 
@@ -415,7 +416,7 @@ const buildOutcomeVisibility = async (user, query = {}) => {
     filter.department = user.department;
   }
 
-  if (user.role === 'faculty') {
+  if (user.role === 'faculty' && !hasRole(user, 'accreditation_officer')) {
     filter.faculty = user._id;
   }
 

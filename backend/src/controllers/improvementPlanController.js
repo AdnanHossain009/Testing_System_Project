@@ -3,6 +3,7 @@ const ImprovementPlan = require('../models/ImprovementPlan');
 const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { logAction } = require('../services/auditService');
+const { hasRole } = require('../utils/roleHelpers');
 const {
   sanitizeTargetPayload,
   sanitizePlanPayload,
@@ -16,7 +17,7 @@ const {
 } = require('../services/improvementPlanningService');
 
 const ensureManagerRole = (user) => {
-  if (!['admin', 'accreditation_officer'].includes(user.role)) {
+  if (!hasRole(user, 'admin', 'accreditation_officer')) {
     const error = new Error('Only admin and accreditation officer can manage improvement plans.');
     error.statusCode = 403;
     throw error;

@@ -4,6 +4,7 @@ import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
 import { useAuth } from '../context/AuthContext';
+import { hasRole } from '../utils/roleUtils';
 import {
   buildArtifactOutcomeText,
   buildArtifactScopeText,
@@ -59,7 +60,7 @@ const EvidenceSampleSetDetailsPage = () => {
   const { sampleSetId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const canManage = user?.role === 'accreditation_officer';
+  const canManage = hasRole(user, 'accreditation_officer');
   const [sampleSet, setSampleSet] = useState(null);
   const [form, setForm] = useState(null);
   const [reviewDrafts, setReviewDrafts] = useState({});
@@ -228,7 +229,10 @@ const EvidenceSampleSetDetailsPage = () => {
       {message ? <div className={message.toLowerCase().includes('failed') ? 'error-box' : 'success-box'}>{message}</div> : null}
 
       <div className="inline-actions" style={{ marginBottom: '1rem' }}>
-        <Link className="btn btn-secondary" to={user?.role === 'faculty' ? '/faculty/evidence' : '/accreditation/evidence-manager'}>
+        <Link
+          className="btn btn-secondary"
+          to={hasRole(user, 'accreditation_officer') ? '/accreditation/evidence-manager' : '/faculty/evidence'}
+        >
           Back
         </Link>
         {canManage ? (

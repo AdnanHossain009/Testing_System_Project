@@ -4,6 +4,7 @@ import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
 import { useAuth } from '../context/AuthContext';
+import { hasRole } from '../utils/roleUtils';
 import {
   buildArtifactOutcomeText,
   buildArtifactScopeText,
@@ -62,7 +63,7 @@ const getCoursesForScope = (courses, departmentId, programId) =>
 
 const EvidenceManagerPage = () => {
   const { user } = useAuth();
-  const canManage = user?.role === 'accreditation_officer';
+  const canManage = hasRole(user, 'accreditation_officer');
   const [filters, setFilters] = useState(initialFilters);
   const [sampleSetForm, setSampleSetForm] = useState(initialSampleSetForm);
   const [artifacts, setArtifacts] = useState([]);

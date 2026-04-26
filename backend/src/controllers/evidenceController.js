@@ -4,6 +4,7 @@ const EvidenceSampleSet = require('../models/EvidenceSampleSet');
 const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { logAction } = require('../services/auditService');
+const { hasRole } = require('../utils/roleHelpers');
 const {
   sanitizeArtifactPayload,
   sanitizeSampleSetPayload,
@@ -38,7 +39,7 @@ const deleteUploadedFileIfExists = (file) => {
 };
 
 const ensureEvidenceManager = (user) => {
-  if (user.role !== 'accreditation_officer') {
+  if (!hasRole(user, 'accreditation_officer')) {
     const error = new Error('Only accreditation officer can manage sample sets and repository-wide evidence.');
     error.statusCode = 403;
     throw error;
@@ -51,7 +52,7 @@ const listEvidenceArtifacts = asyncHandler(async (req, res) => {
 });
 
 const createEvidenceArtifact = asyncHandler(async (req, res) => {
-  if (!['faculty', 'accreditation_officer'].includes(req.user.role)) {
+  if (!hasRole(req.user, 'faculty', 'accreditation_officer')) {
     res.status(403);
     throw new Error('You are not allowed to upload evidence.');
   }
@@ -100,7 +101,7 @@ const getEvidenceArtifact = asyncHandler(async (req, res) => {
 const updateEvidenceArtifact = asyncHandler(async (req, res) => {
   const artifact = await getArtifactForUser(req.user, req.params.artifactId);
   const canEdit =
-    req.user.role === 'accreditation_officer' ||
+    hasRole(req.user, 'accreditation_officer') ||
     (req.user.role === 'faculty' && String(artifact.uploader?._id || artifact.uploader) === String(req.user._id));
 
   if (!canEdit) {

@@ -1,5 +1,6 @@
 import api from '../api/client';
 import { formatFileSize } from './courseRequestHelpers';
+import { hasRole } from './roleUtils';
 
 export const evidenceTypeOptions = [
   { value: 'report', label: 'Report' },
@@ -124,7 +125,7 @@ export const buildSampleSetScopeText = (sampleSet = {}) => {
 
 export const canReviewSampleSet = (user, sampleSet) => {
   if (!user || !sampleSet) return false;
-  if (user.role === 'accreditation_officer') return true;
+  if (hasRole(user, 'accreditation_officer')) return true;
 
   return String(sampleSet.reviewer?._id || sampleSet.reviewer || '') === String(user._id);
 };

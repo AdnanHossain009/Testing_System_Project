@@ -1,12 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
-const dashboardByRole = {
-  admin: '/dashboard/admin',
-  faculty: '/dashboard/faculty',
-  student: '/dashboard/student',
-  head: '/dashboard/head'
-};
+import { getDashboardPath } from '../utils/roleUtils';
 
 const PublicLayout = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -17,7 +11,7 @@ const PublicLayout = () => {
     navigate('/');
   };
 
-  const dashboardPath = dashboardByRole[user?.role] || '/login';
+  const dashboardPath = getDashboardPath(user);
 
   return (
     <div className="public-shell">

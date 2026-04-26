@@ -1,23 +1,54 @@
 const User = require('../models/User');
+const Department = require('../models/Department');
+const Program = require('../models/Program');
 const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const generateToken = require('../utils/generateToken');
 const { logAction } = require('../services/auditService');
+const { createNotification } = require('../services/notificationService');
+const { getAssignedRoles, getPreferredDashboard, getUserRoles } = require('../utils/roleHelpers');
 
 const SIGNUP_ROLES = new Set(['faculty', 'student', 'head']);
+const getApprovalStatus = (user) => user?.approvalStatus || 'approved';
 
 const buildUserPayload = (user) => ({
   id: user._id,
   name: user.name,
   email: user.email,
   role: user.role,
+  assignedRoles: getAssignedRoles(user),
+  effectiveRoles: getUserRoles(user),
+  preferredDashboard: getPreferredDashboard(user),
   department: user.department,
   program: user.program,
   studentId: user.studentId,
-  facultyId: user.facultyId
+  facultyId: user.facultyId,
+  isActive: user.isActive,
+  approvalStatus: getApprovalStatus(user)
 });
 
 const getPopulatedUserById = (id) => User.findById(id).select('-password').populate('department program');
+
+const buildPendingApprovalMessage = (role) =>
+  role === 'head'
+    ? 'Signup request submitted. An admin must approve your department head account before you can sign in.'
+    : 'Signup request submitted. Your department head must approve your account before you can sign in.';
+
+const buildApprovalBlockedMessage = (user) => {
+  if (getApprovalStatus(user) === 'pending') {
+    return user.role === 'head'
+      ? 'Your department head account is awaiting admin approval.'
+      : 'Your account is awaiting approval from your department head.';
+  }
+
+  if (getApprovalStatus(user) === 'rejected') {
+    return user.approvalNote
+      ? `Your account request was rejected. ${user.approvalNote}`
+      : 'Your account request was rejected.';
+  }
+
+  return 'Your account is not currently allowed to sign in.';
+};
 
 const setupRegister = asyncHandler(async (req, res) => {
   const { name, email, password, role = 'admin' } = req.body;
@@ -83,6 +114,16 @@ const login = asyncHandler(async (req, res) => {
     throw new Error('Invalid email or password.');
   }
 
+  if (getApprovalStatus(user) !== 'approved') {
+    res.status(403);
+    throw new Error(buildApprovalBlockedMessage(user));
+  }
+
+  if (!user.isActive) {
+    res.status(403);
+    throw new Error('Your account is currently inactive.');
+  }
+
   return success(res, {
     token: generateToken(user),
     user: buildUserPayload(user)
@@ -102,6 +143,11 @@ const signup = asyncHandler(async (req, res) => {
     throw new Error('Signup is only available for faculty, student, and head accounts.');
   }
 
+  if (!department) {
+    res.status(400);
+    throw new Error('Department is required for faculty, student, and head signup.');
+  }
+
   if (role === 'student' && !studentId) {
     res.status(400);
     throw new Error('Student ID is required for student signup.');
@@ -112,40 +158,111 @@ const signup = asyncHandler(async (req, res) => {
     throw new Error('Faculty ID is required for faculty signup.');
   }
 
-  const existing = await User.findOne({ email });
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) {
     res.status(400);
     throw new Error('User already exists.');
   }
 
+  const departmentDoc = await Department.findById(department).populate('head', 'name email isActive approvalStatus');
+
+  if (!departmentDoc) {
+    res.status(404);
+    throw new Error('Selected department was not found.');
+  }
+
+  let programDoc = null;
+  if (program) {
+    programDoc = await Program.findById(program);
+
+    if (!programDoc) {
+      res.status(404);
+      throw new Error('Selected program was not found.');
+    }
+
+    if (String(programDoc.department) !== String(departmentDoc._id)) {
+      res.status(400);
+      throw new Error('Selected program does not belong to the chosen department.');
+    }
+  }
+
+  let approvalRecipients = [];
+
+  if (role === 'head') {
+    approvalRecipients = await User.find({
+      role: 'admin',
+      isActive: true
+    }).select('_id name');
+
+    if (!approvalRecipients.length) {
+      res.status(400);
+      throw new Error('No active admin is available to approve this department head signup.');
+    }
+  } else {
+    if (!departmentDoc.head?._id) {
+      res.status(400);
+      throw new Error('This department does not have an assigned department head yet.');
+    }
+
+    if (getApprovalStatus(departmentDoc.head) !== 'approved' || !departmentDoc.head.isActive) {
+      res.status(400);
+      throw new Error('The assigned department head is not currently available to approve new accounts.');
+    }
+
+    approvalRecipients = [departmentDoc.head];
+  }
+
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail,
     password,
     role,
-    department,
-    program,
+    department: departmentDoc._id,
+    program: programDoc?._id,
     studentId: role === 'student' ? studentId : undefined,
-    facultyId: role === 'faculty' ? facultyId : undefined
+    facultyId: role === 'faculty' ? facultyId : undefined,
+    isActive: false,
+    approvalStatus: 'pending'
   });
 
   await user.populate('department program');
 
+  await Promise.all(
+    approvalRecipients.map((recipient) =>
+      createNotification({
+        user: recipient._id,
+        title: role === 'head' ? 'New department head signup request' : 'New account approval request',
+        message:
+          role === 'head'
+            ? `${user.name} requested department head access for ${departmentDoc.code}.`
+            : `${user.name} requested a ${role} account for ${departmentDoc.code}.`,
+        type: 'info'
+      })
+    )
+  );
+
   await logAction({
     actor: user._id,
-    action: 'SIGNUP',
+    action: 'SIGNUP_REQUEST',
     entityType: 'User',
     entityId: user._id.toString(),
-    metadata: { email: user.email, role: user.role }
+    metadata: {
+      email: user.email,
+      role: user.role,
+      departmentId: departmentDoc._id.toString(),
+      programId: programDoc?._id?.toString() || null
+    }
   });
 
   return success(
     res,
     {
-      token: generateToken(user),
+      requiresApproval: true,
+      approvalStatus: getApprovalStatus(user),
       user: buildUserPayload(user)
     },
-    'Signup successful.',
+    buildPendingApprovalMessage(role),
     201
   );
 });

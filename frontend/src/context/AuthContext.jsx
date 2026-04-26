@@ -48,7 +48,11 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { email, password });
       const payload = response.data.data;
       storeSession(payload);
-      return { ok: true, role: payload.user.role };
+      return {
+        ok: true,
+        role: payload.user.role,
+        dashboard: payload.user.preferredDashboard
+      };
     } catch (error) {
       return {
         ok: false,
@@ -64,8 +68,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/signup', data);
       const payload = response.data.data;
-      storeSession(payload);
-      return { ok: true, role: payload.user.role };
+
+      if (payload.token && payload.user) {
+        storeSession(payload);
+      }
+
+      return {
+        ok: true,
+        role: payload.user?.role,
+        dashboard: payload.user?.preferredDashboard,
+        requiresApproval: Boolean(payload.requiresApproval),
+        message: response.data.message
+      };
     } catch (error) {
       return {
         ok: false,

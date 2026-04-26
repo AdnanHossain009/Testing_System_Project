@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { hasRole } = require('../utils/roleHelpers');
+const getApprovalStatus = (user) => user?.approvalStatus || 'approved';
 
 const protect = async (req, res, next) => {
   let token;
@@ -20,6 +22,20 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'User not found for this token.' });
     }
 
+    if (getApprovalStatus(user) !== 'approved') {
+      return res.status(403).json({
+        success: false,
+        message:
+          getApprovalStatus(user) === 'pending'
+            ? 'Your account is still waiting for approval.'
+            : 'Your account request was rejected.'
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({ success: false, message: 'Your account is inactive.' });
+    }
+
     req.user = user;
     next();
   } catch (error) {
@@ -29,7 +45,7 @@ const protect = async (req, res, next) => {
 
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!hasRole(req.user, roles)) {
       return res.status(403).json({
         success: false,
         message: `Role ${req.user.role} is not allowed to access this resource`

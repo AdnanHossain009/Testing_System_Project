@@ -1,21 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './LoginPage.css';
-
-const destinationByRole = {
-  admin: '/dashboard/admin',
-  faculty: '/dashboard/faculty',
-  student: '/dashboard/student',
-  head: '/dashboard/head',
-  accreditation_officer: '/dashboard/accreditation'
-};
+import { getDashboardPath } from '../utils/roleUtils';
 
 const roleLabels = {
   admin: 'Admin',
   faculty: 'Faculty',
   student: 'Student',
-  head: 'Head',
+  head: 'Department Head',
   accreditation_officer: 'Accreditation Officer'
 };
 
@@ -30,6 +24,7 @@ const getInitialForm = (initialMode) => ({
   email: initialMode === 'signup' ? '' : 'admin@example.com',
   password: initialMode === 'signup' ? '' : 'Admin123!',
   confirmPassword: '',
+  department: '',
   studentId: '',
   facultyId: ''
 });
@@ -40,11 +35,35 @@ const LoginPage = ({ initialMode = 'login' }) => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState(() => getInitialForm(initialMode));
+  const [departments, setDepartments] = useState([]);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const roleOptions = roleOptionsByMode[isSignup ? 'signup' : 'login'];
   const selectedRoleLabel = roleLabels[form.role] || 'User';
+
+  useEffect(() => {
+    if (!isSignup) {
+      return;
+    }
+
+    const loadDepartments = async () => {
+      try {
+        const response = await api.get('/departments');
+        const departmentList = response.data.data.departments || [];
+        setDepartments(departmentList);
+        setForm((current) => ({
+          ...current,
+          department: current.department || departmentList[0]?._id || ''
+        }));
+      } catch (requestError) {
+        setError(requestError?.response?.data?.message || 'Failed to load departments for signup.');
+      }
+    };
+
+    loadDepartments();
+  }, [isSignup]);
 
   const handleRoleChange = (event) => {
     const nextRole = event.target.value;
@@ -60,6 +79,7 @@ const LoginPage = ({ initialMode = 'login' }) => {
   const submitHandler = async (event) => {
     event.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     if (isSignup) {
       const name = form.name.trim();
@@ -67,7 +87,7 @@ const LoginPage = ({ initialMode = 'login' }) => {
       const studentId = form.studentId.trim();
       const facultyId = form.facultyId.trim();
 
-      if (!name || !email || !form.password || !form.confirmPassword) {
+      if (!name || !email || !form.password || !form.confirmPassword || !form.department) {
         setError('Please fill in all required fields.');
         return;
       }
@@ -92,6 +112,7 @@ const LoginPage = ({ initialMode = 'login' }) => {
         email,
         password: form.password,
         role: form.role,
+        department: form.department,
         ...(form.role === 'student' ? { studentId } : {}),
         ...(form.role === 'faculty' ? { facultyId } : {})
       });
@@ -101,7 +122,17 @@ const LoginPage = ({ initialMode = 'login' }) => {
         return;
       }
 
-      navigate(destinationByRole[response.role] || '/');
+      if (response.requiresApproval) {
+        setSuccessMessage(response.message || 'Signup request submitted. Wait for approval before signing in.');
+        setForm((current) => ({
+          ...getInitialForm('signup'),
+          role: current.role,
+          department: current.department
+        }));
+        return;
+      }
+
+      navigate(response.dashboard || getDashboardPath({ role: response.role }));
       return;
     }
 
@@ -112,7 +143,7 @@ const LoginPage = ({ initialMode = 'login' }) => {
       return;
     }
 
-    navigate(destinationByRole[response.role] || '/');
+    navigate(response.dashboard || getDashboardPath({ role: response.role }));
   };
 
   const goToMode = (targetMode) => {
@@ -207,7 +238,7 @@ const LoginPage = ({ initialMode = 'login' }) => {
                 <h2>{isSignup ? 'Create Your Account' : 'Welcome Back'}</h2>
                 <p>
                   {isSignup
-                    ? `Register as ${selectedRoleLabel}. Your details will be stored in the database right away.`
+                    ? `Register as ${selectedRoleLabel}. Approval is required before the account can sign in.`
                     : `Sign in as ${selectedRoleLabel} to access the matching dashboard.`}
                 </p>
               </div>
@@ -231,6 +262,7 @@ const LoginPage = ({ initialMode = 'login' }) => {
                 </button>
               </div>
 
+              {successMessage ? <div className="success-box">{successMessage}</div> : null}
               {error ? <div className="login-page-pro__error">{error}</div> : null}
 
               <form onSubmit={submitHandler} className="login-page-pro__form">
@@ -244,6 +276,24 @@ const LoginPage = ({ initialMode = 'login' }) => {
                     ))}
                   </select>
                 </div>
+
+                {isSignup ? (
+                  <div className="login-page-pro__group">
+                    <label>Department</label>
+                    <select
+                      value={form.department}
+                      onChange={(event) => setForm({ ...form, department: event.target.value })}
+                      required
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((department) => (
+                        <option key={department._id} value={department._id}>
+                          {department.code} - {department.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
 
                 {isSignup ? (
                   <div className="login-page-pro__group">
@@ -351,13 +401,13 @@ const LoginPage = ({ initialMode = 'login' }) => {
                 </button>
               </form>
 
-              {isSignup ? (
-                <div className="login-page-pro__demo login-page-pro__demo--signup">
-                  <strong>Signup rules</strong>
+                {isSignup ? (
+                  <div className="login-page-pro__demo login-page-pro__demo--signup">
+                    <strong>Signup rules</strong>
                   <p>Faculty, student, and head accounts are allowed here.</p>
-                  <p>Admin registration stays locked to the setup flow.</p>
-                  <p>Accreditation officer accounts are created by admins.</p>
-                  <p>Your account will be saved in MongoDB and ready for sign in.</p>
+                  <p>Student and faculty signup requests must be approved by the department head.</p>
+                  <p>Department head signup requests must be approved by an admin.</p>
+                  <p>Accreditation officer access is assigned from the department head dashboard.</p>
                 </div>
               ) : (
                 <div className="login-page-pro__demo">

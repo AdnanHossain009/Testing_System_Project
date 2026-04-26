@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import { useAuth } from '../context/AuthContext';
+import { hasRole } from '../utils/roleUtils';
 import {
   buildScopeText,
   formatDateInput,
@@ -30,7 +31,7 @@ const ImprovementPlanDetailsPage = () => {
   const { user } = useAuth();
   const { planId } = useParams();
   const navigate = useNavigate();
-  const canManage = managerRoles.includes(user?.role);
+  const canManage = hasRole(user, managerRoles);
   const [plan, setPlan] = useState(null);
   const [form, setForm] = useState(null);
   const [departments, setDepartments] = useState([]);

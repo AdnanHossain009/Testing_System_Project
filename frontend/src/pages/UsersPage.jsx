@@ -2,14 +2,10 @@ import { useEffect, useState } from 'react';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
+import { getRoleLabel, getRoleOptions } from '../utils/roleUtils';
 
-const roleLabels = {
-  admin: 'Admin',
-  faculty: 'Faculty',
-  student: 'Student',
-  head: 'Department Head',
-  accreditation_officer: 'Accreditation Officer'
-};
+const roleLabels = getRoleOptions();
+const createRoleOptions = ['admin', 'faculty', 'student', 'head'];
 
 const initialCreateForm = {
   name: '',
@@ -157,6 +153,7 @@ const UsersPage = () => {
 
   const createProgramOptions = getProgramsForDepartment(programs, createForm.department);
   const editProgramOptions = getProgramsForDepartment(programs, editForm.department);
+  const editRoleOptions = Array.from(new Set([...createRoleOptions, editForm.role]));
 
   const createUser = async (event) => {
     event.preventDefault();
@@ -205,7 +202,9 @@ const UsersPage = () => {
     admin: users.filter((item) => item.role === 'admin').length,
     faculty: users.filter((item) => item.role === 'faculty').length,
     head: users.filter((item) => item.role === 'head').length,
-    accreditationOfficer: users.filter((item) => item.role === 'accreditation_officer').length,
+    accreditationOfficer: users.filter(
+      (item) => item.role === 'accreditation_officer' || item.assignedRoles?.includes('accreditation_officer')
+    ).length,
     student: users.filter((item) => item.role === 'student').length
   };
 
@@ -233,7 +232,7 @@ const UsersPage = () => {
         <form className="card" onSubmit={createUser}>
           <h3>Create User</h3>
           <p className="muted">
-            Admins can create <code>accreditation_officer</code> accounts here for institutional accreditation workflows.
+            Admins can create approved department, faculty, student, and head accounts here. Accreditation officer access is now assigned from the department head dashboard.
           </p>
 
           <div className="grid grid-2">
@@ -276,7 +275,7 @@ const UsersPage = () => {
                   )
                 }
               >
-                {Object.keys(roleLabels).map((role) => (
+                {createRoleOptions.map((role) => (
                   <option value={role} key={role}>
                     {roleLabels[role]}
                   </option>
@@ -365,7 +364,7 @@ const UsersPage = () => {
                       )
                     }
                   >
-                    {Object.keys(roleLabels).map((role) => (
+                    {editRoleOptions.map((role) => (
                       <option value={role} key={role}>
                         {roleLabels[role]}
                       </option>
@@ -457,6 +456,7 @@ const UsersPage = () => {
               <tr>
                 <th>Name</th>
                 <th>Role</th>
+                <th>Approval</th>
                 <th>Department</th>
                 <th>Action</th>
               </tr>
@@ -468,7 +468,8 @@ const UsersPage = () => {
                     <strong>{item.name}</strong>
                     <div className="muted">{item.email}</div>
                   </td>
-                  <td>{roleLabels[item.role] || item.role}</td>
+                  <td>{getRoleLabel(item)}</td>
+                  <td>{item.approvalStatus || (item.isActive ? 'approved' : 'inactive')}</td>
                   <td>{item.department?.code || 'N/A'}</td>
                   <td>
                     <button className="btn btn-secondary" onClick={() => setSelectedUser(item)}>
@@ -492,7 +493,7 @@ const UsersPage = () => {
                 <strong>Email:</strong> {selectedUser.email}
               </p>
               <p>
-                <strong>Role:</strong> {roleLabels[selectedUser.role] || selectedUser.role}
+                <strong>Role:</strong> {getRoleLabel(selectedUser)}
               </p>
               <p>
                 <strong>Department:</strong> {selectedUser.department?.name || 'N/A'}
@@ -502,6 +503,9 @@ const UsersPage = () => {
               </p>
               <p>
                 <strong>Account Status:</strong> {selectedUser.isActive ? 'Active' : 'Inactive'}
+              </p>
+              <p>
+                <strong>Approval Status:</strong> {selectedUser.approvalStatus || 'approved'}
               </p>
               <p>
                 <strong>Student ID:</strong> {selectedUser.studentId || 'N/A'}

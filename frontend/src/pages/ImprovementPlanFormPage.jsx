@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import Loading from '../components/Loading';
 import { useAuth } from '../context/AuthContext';
+import { hasRole } from '../utils/roleUtils';
 
 const managerRoles = ['admin', 'accreditation_officer'];
 
@@ -62,7 +63,7 @@ const ImprovementPlanFormPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const canManage = managerRoles.includes(user?.role);
+  const canManage = hasRole(user, managerRoles);
   const [form, setForm] = useState(() => buildInitialFormFromSearch(searchParams));
   const [departments, setDepartments] = useState([]);
   const [programs, setPrograms] = useState([]);

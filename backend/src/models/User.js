@@ -11,11 +11,25 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'faculty', 'student', 'head', 'accreditation_officer'],
       required: true
     },
+    assignedRoles: [
+      {
+        type: String,
+        enum: ['accreditation_officer']
+      }
+    ],
     department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
     program: { type: mongoose.Schema.Types.ObjectId, ref: 'Program' },
     studentId: { type: String, trim: true },
     facultyId: { type: String, trim: true },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'approved'
+    },
+    approvalReviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    approvalReviewedAt: { type: Date },
+    approvalNote: { type: String, default: '', trim: true }
   },
   { timestamps: true }
 );

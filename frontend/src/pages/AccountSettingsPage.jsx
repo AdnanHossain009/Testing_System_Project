@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { getRoleLabel } from '../utils/roleUtils';
 
 const AccountSettingsPage = () => {
   const { user, syncUser } = useAuth();
@@ -81,13 +82,13 @@ const AccountSettingsPage = () => {
 
       {message ? <div className={messageType === 'error' ? 'error-box' : 'success-box'}>{message}</div> : null}
 
-      <div className="grid grid-3">
+      <div className="grid grid-4">
         <div className="card stat-card">
           <span className="stat-label">Name</span>
           <span className="stat-value" style={{ fontSize: '1.4rem' }}>
             {user?.name || 'N/A'}
           </span>
-          <span className="muted">{user?.role || 'N/A'}</span>
+          <span className="muted">{getRoleLabel(user)}</span>
         </div>
         <div className="card stat-card">
           <span className="stat-label">Department</span>
@@ -102,6 +103,13 @@ const AccountSettingsPage = () => {
             {user?.studentId || user?.facultyId || 'General Account'}
           </span>
           <span className="muted">Current email: {user?.email || 'N/A'}</span>
+        </div>
+        <div className="card stat-card">
+          <span className="stat-label">Approval</span>
+          <span className="stat-value" style={{ fontSize: '1.4rem' }}>
+            {user?.approvalStatus || 'approved'}
+          </span>
+          <span className="muted">{user?.isActive ? 'Account active' : 'Account inactive'}</span>
         </div>
       </div>
 

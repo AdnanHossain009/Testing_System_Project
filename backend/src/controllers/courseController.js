@@ -3,10 +3,11 @@ const CLOPLOMapping = require('../models/CLOPLOMapping');
 const { success } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { logAction } = require('../services/auditService');
+const { hasRole } = require('../utils/roleHelpers');
 
 const listCourses = asyncHandler(async (req, res) => {
-  const isAdmin = req.user.role === 'admin';
-  const isAccreditationOfficer = req.user.role === 'accreditation_officer';
+  const isAdmin = hasRole(req.user, 'admin');
+  const isAccreditationOfficer = hasRole(req.user, 'accreditation_officer');
   const filter = isAdmin ? {} : { active: true };
 
   if (!isAdmin && !isAccreditationOfficer) {

@@ -116,9 +116,28 @@ button {
 }
 
 .nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0.75rem 0.9rem;
   border-radius: 10px;
   color: #dbe7ff;
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #082f49;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .nav-link.active,

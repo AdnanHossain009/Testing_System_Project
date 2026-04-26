@@ -1,13 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
-const roleLabels = {
-  admin: 'Admin',
-  faculty: 'Faculty',
-  student: 'Student',
-  head: 'Department Head',
-  accreditation_officer: 'Accreditation Officer'
-};
+import { useNotifications } from '../context/NotificationContext';
+import { getRoleLabel, hasRole } from '../utils/roleUtils';
 
 const menuByRole = {
   admin: [
@@ -75,10 +69,36 @@ const menuByRole = {
   ]
 };
 
+const buildMenuItems = (user) => {
+  if (!user) return [];
+
+  let orderedRoles = [user.role];
+
+  if (user.role === 'faculty' && hasRole(user, 'accreditation_officer')) {
+    orderedRoles = ['accreditation_officer', 'faculty'];
+  } else if (hasRole(user, 'accreditation_officer') && user.role !== 'accreditation_officer') {
+    orderedRoles = [user.role, 'accreditation_officer'];
+  }
+
+  const seen = new Set();
+  return orderedRoles.flatMap((role) => {
+    const items = menuByRole[role] || [];
+    return items.filter((item) => {
+      if (seen.has(item.to)) {
+        return false;
+      }
+
+      seen.add(item.to);
+      return true;
+    });
+  });
+};
+
 const Layout = () => {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
-  const items = menuByRole[user?.role] || [];
+  const items = buildMenuItems(user);
 
   const handleLogout = () => {
     logout();
@@ -96,7 +116,8 @@ const Layout = () => {
         <nav className="nav-list">
           {items.map((item) => (
             <NavLink key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              {item.label}
+              <span>{item.label}</span>
+              {item.to === '/notifications' && unreadCount > 0 ? <span className="nav-badge">{unreadCount}</span> : null}
             </NavLink>
           ))}
         </nav>
@@ -106,7 +127,7 @@ const Layout = () => {
         <header className="topbar">
           <div>
             <strong>{user?.name}</strong>
-            <div className="muted">{roleLabels[user?.role] || user?.role}</div>
+            <div className="muted">{getRoleLabel(user)}</div>
           </div>
           <button className="btn btn-secondary" onClick={handleLogout}>
             Logout

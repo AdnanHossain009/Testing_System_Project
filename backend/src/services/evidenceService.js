@@ -7,6 +7,7 @@ const User = require('../models/User');
 const EvidenceArtifact = require('../models/EvidenceArtifact');
 const EvidenceSampleSet = require('../models/EvidenceSampleSet');
 const { evidenceUploadRoot } = require('../middleware/uploadMiddleware');
+const { hasRole } = require('../utils/roleHelpers');
 
 const normalizeText = (value = '') => String(value || '').trim();
 const normalizeCode = (value = '') => normalizeText(value).toUpperCase();
@@ -212,11 +213,7 @@ const buildArtifactFilePayloadFromFile = (file) => ({
 });
 
 const buildArtifactVisibilityFilter = async (user) => {
-  if (user.role === 'accreditation_officer') {
-    return {};
-  }
-
-  if (user.role === 'admin') {
+  if (hasRole(user, 'admin', 'accreditation_officer')) {
     return {};
   }
 
@@ -270,11 +267,7 @@ const applyArtifactFilters = (baseFilter, query = {}) => {
 };
 
 const buildSampleSetVisibilityFilter = async (user) => {
-  if (user.role === 'accreditation_officer') {
-    return {};
-  }
-
-  if (user.role === 'admin') {
+  if (hasRole(user, 'admin', 'accreditation_officer')) {
     return {};
   }
 
@@ -328,7 +321,7 @@ const listArtifactsForUser = async (user, query = {}) => {
 
   return artifacts.map((artifact) => ({
     ...artifact.toObject(),
-    canEdit: user.role === 'accreditation_officer' || String(artifact.uploader?._id || artifact.uploader) === String(user._id)
+    canEdit: hasRole(user, 'accreditation_officer') || String(artifact.uploader?._id || artifact.uploader) === String(user._id)
   }));
 };
 
@@ -494,7 +487,7 @@ const getSampleSetForUser = async (user, id) => {
 };
 
 const validateReviewerAccess = (user, sampleSet) => {
-  if (user.role === 'accreditation_officer') {
+  if (hasRole(user, 'accreditation_officer')) {
     return;
   }
 

@@ -5,6 +5,7 @@ const CourseRequest = require('../models/CourseRequest');
 const Enrollment = require('../models/Enrollment');
 const CLOPLOMapping = require('../models/CLOPLOMapping');
 const Assessment = require('../models/Assessment');
+const Department = require('../models/Department');
 const Program = require('../models/Program');
 const User = require('../models/User');
 const { success } = require('../utils/apiResponse');
@@ -463,6 +464,11 @@ const requestStudentEnrollment = asyncHandler(async (req, res) => {
     throw new Error('Course is not available for enrollment.');
   }
 
+  if (req.user.department && String(req.user.department) !== String(course.department)) {
+    res.status(403);
+    throw new Error('You can only request courses from your own department.');
+  }
+
   if (req.user.program && String(req.user.program) !== String(course.program)) {
     res.status(403);
     throw new Error('This course is not in your program.');
@@ -577,11 +583,19 @@ const requestFacultyCourse = asyncHandler(async (req, res) => {
     throw new Error('A pending request already exists for this course code.');
   }
 
-  const head = await User.findOne({ role: 'head', department: req.user.department });
-  if (!head) {
+  const departmentDoc = await Department.findById(req.user.department).populate('head', 'name email isActive approvalStatus');
+
+  if (!departmentDoc?.head?._id) {
     res.status(400);
     throw new Error('No department head is assigned for this department.');
   }
+
+  if ((departmentDoc.head.approvalStatus || 'approved') !== 'approved' || !departmentDoc.head.isActive) {
+    res.status(400);
+    throw new Error('The assigned department head is not currently available to approve course requests.');
+  }
+
+  const head = departmentDoc.head;
 
   const request = await CourseRequest.create({
     type: 'faculty_course',

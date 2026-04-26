@@ -4,6 +4,7 @@ import api from '../api/client';
 import Loading from '../components/Loading';
 import StatCard from '../components/StatCard';
 import { useAuth } from '../context/AuthContext';
+import { hasRole } from '../utils/roleUtils';
 import {
   buildOutcomeScopeText,
   buildScopeText,
@@ -80,7 +81,7 @@ const createPlanLink = (item) => {
 
 const ImprovementPlansPage = () => {
   const { user } = useAuth();
-  const canManage = managerRoles.includes(user?.role);
+  const canManage = hasRole(user, managerRoles);
   const [filters, setFilters] = useState(initialFilters);
   const [plans, setPlans] = useState([]);
   const [outcomes, setOutcomes] = useState([]);

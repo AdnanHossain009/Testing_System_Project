@@ -263,6 +263,20 @@ const CoursesPage = () => {
         </form>
       ) : null}
 
+      {isStudent ? (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <div className="section-heading">
+            <div>
+              <h3>Department Enrollment Panel</h3>
+              <p className="muted">
+                You can request only the courses assigned to your department. Each request goes to the listed faculty member for approval.
+              </p>
+            </div>
+            <span className="status-badge badge-muted">{user?.department?.code || 'Department'} only</span>
+          </div>
+        </div>
+      ) : null}
+
       <form className="card" onSubmit={handleSearch} style={{ marginTop: '1rem' }}>
         <h3>Search Courses</h3>
         <div className="inline-actions" style={{ alignItems: 'flex-end' }}>
